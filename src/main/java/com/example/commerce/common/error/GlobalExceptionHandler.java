@@ -65,7 +65,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(NoResourceFoundException e, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(HttpServletRequest request) {
         log.warn("404 Not Found: {}", request.getRequestURI());
 
         return ResponseEntity
