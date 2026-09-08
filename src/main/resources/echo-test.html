@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>순수 WebSocket 테스트</title>
+</head>
+<body>
+<h3>순수 WebSocket 에코 테스트</h3>
+<input type="text" id="messageInput" placeholder="메시지 입력">
+<button onclick="sendMessage()">전송</button>
+<ul id="messageList"></ul>
+
+<script>
+    const socket = new WebSocket("ws://localhost:8080/ws-echo");
+
+    socket.onopen = () => appendMessage("연결됨");
+    socket.onmessage = (event) => appendMessage("수신: " + event.data);
+    socket.onclose = () => appendMessage("연결 종료");
+
+    function sendMessage() {
+        const input = document.getElementById("messageInput");
+        socket.send(input.value);
+        input.value = "";
+    }
+
+    function appendMessage(text) {
+        const item = document.createElement("li");
+        item.textContent = text;
+        document.getElementById("messageList").appendChild(item);
+    }
+</script>
+</body>
+</html>
