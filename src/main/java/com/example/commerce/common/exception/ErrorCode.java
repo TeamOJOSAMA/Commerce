@@ -34,7 +34,16 @@ public enum ErrorCode {
     // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001","결제 정보를 찾을 수 없습니다."),
     AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_002","결제 금액이 일치하지 않습니다."),
-    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_003","처리할 수 없는 결제 상태입니다.");
+    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_003","처리할 수 없는 결제 상태입니다."),
+
+    // 채팅
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_001","채팅방을 찾을 수 없습니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CHAT_002","해당 채팅방에 접근할 권한이 없습니다."),
+    INVALID_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "CHAT_003","허용되지 않은 상태 전이입니다."),
+    CLOSED_INQUIRY(HttpStatus.BAD_REQUEST, "CHAT_004","이미 완료된 문의입니다."),
+    INVALID_CURSOR(HttpStatus.BAD_REQUEST, "CHAT_005","유효하지 않은 커서 값입니다."),
+    INVALID_INQUIRY_STATUS(HttpStatus.BAD_REQUEST, "CHAT_006","존재하지 않는 문의 상태입니다."),
+    WEBSOCKET_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "CHAT_007","웹소켓 인증에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;
