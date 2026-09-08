@@ -29,3 +29,7 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+jwt:
+  secret: ${JWT_SECRET:change-this-to-a-long-random-base64-secret-key-for-dev-only}
+  expiration: 3600000   # 1시간(ms), 필요에 맞게 조정
