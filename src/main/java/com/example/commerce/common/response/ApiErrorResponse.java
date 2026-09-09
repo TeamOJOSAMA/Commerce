@@ -1,6 +1,6 @@
 package com.example.commerce.common.response;
 
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.ErrorCode;
 import lombok.Getter;
 
 @Getter

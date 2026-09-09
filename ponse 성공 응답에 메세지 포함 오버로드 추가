@@ -1,0 +1,19 @@
+[33mc3b9c83[m[33m ([m[1;31morigin/dev[m[33m)[m Merge pull request #12 from TeamOJOSAMA/user
+[33m4aaba5b[m Merge pull request #14 from TeamOJOSAMA/feat/payment-create-api
+[33m1112851[m Merge pull request #11 from TeamOJOSAMA/feat/coupon-entity
+[33mea05f25[m[33m ([m[1;31morigin/user[m[33m)[m QueryDSL 적용한 유저 조회 페이지네이션/검색 기능
+[33m16a7a6a[m Merge branch 'dev' into user
+[33mc3eedc9[m QueryDSL 적용한 유저 조회 페이지네이션/검색 기능
+[33m00946c3[m[33m ([m[1;31morigin/feat/payment-create-api[m[33m)[m Merge branch 'dev' into feat/payment-create-api
+[33mfdc084f[m feat: 모의 결제 승인/실패 처리 및 결제 상세 조회 API 구현
+[33m871ca8c[m feat: Payment 결제 승인 상태전이(approve) 추가
+[33m609084d[m feat: ApiResponse 성공 응답에 메세지 포함 오버로드 추가
+[33m5648718[m 유저 조회/권한 관리 API 구현
+[33m38e0811[m Merge pull request #10 from TeamOJOSAMA/feat/cart-entity
+[33m3aa3539[m[33m ([m[1;31morigin/feat/coupon-entity[m[33m)[m feat: 쿠폰 도메인 엔티티 구현
+[33m668be37[m[33m ([m[1;31morigin/feat/cart-entity[m[33m)[m feat: 장바구니 도메인 엔티티 구현
+[33mff2875c[m feat: PaymentCreateRequest, PaymentFailRequest, PaymentResponse DTO 및 의존성 추가
+[33m55e119c[m feat: PaymentEntity 및 PaymentRepository, PaymentStatus 구현
+[33m2f8be2c[m Merge branch 'refs/heads/dev' into feat/payment-create-api
+[33m22b9c9c[m feat: PaymentRepository 추가
+[33m1d9fb06[m feat: Payment 엔티티 및 PaymentStatus 추가

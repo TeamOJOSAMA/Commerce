@@ -1,7 +1,7 @@
 package com.example.commerce.domain.payment.service;
 
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.order.entity.Order;
 import com.example.commerce.domain.order.repository.OrderRepository;
 import com.example.commerce.domain.payment.dto.PaymentResponse;
