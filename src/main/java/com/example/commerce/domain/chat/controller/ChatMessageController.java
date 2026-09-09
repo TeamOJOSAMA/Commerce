@@ -2,6 +2,8 @@ package com.example.commerce.domain.chat.controller;
 
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.chat.dto.request.ChatMessageSendRequest;
+import com.example.commerce.domain.chat.dto.response.ChatMessageResponse;
+import com.example.commerce.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -19,6 +21,7 @@ public class ChatMessageController {
 
     private static final String SUBSCRIBE_DESTINATION = "/sub/chat-rooms/";
 
+    private final ChatMessageService chatMessageService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat-rooms/{chatRoomId}/messages")
@@ -27,11 +30,10 @@ public class ChatMessageController {
                             Principal principal) {
         AuthUser authUser = extractAuthUser(principal);
 
-        log.info("메시지 수신: roomId={}, senderId={}, content={}",
+        ChatMessageResponse response = chatMessageService.sendMessage(
                 chatRoomId, authUser.getUserId(), request.content());
 
-        // TODO: 채팅방 접근 권한 검증 및 메시지 영속화 추가
-        messagingTemplate.convertAndSend(SUBSCRIBE_DESTINATION + chatRoomId, request);
+        messagingTemplate.convertAndSend(SUBSCRIBE_DESTINATION + chatRoomId, response);
     }
 
     private AuthUser extractAuthUser(Principal principal) {

@@ -80,7 +80,7 @@
 
             stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
                 const body = JSON.parse(message.body);
-                appendMessage("수신: " + body.content);
+                appendMessage("[" + body.senderName + "] " + body.content);
             });
         }, (error) => {
             appendMessage("연결 실패: " + error);
