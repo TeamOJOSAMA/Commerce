@@ -3,17 +3,16 @@ package com.example.commerce.domain.payment.entity;
 import com.example.commerce.common.entity.BaseEntity;
 import com.example.commerce.common.error.BusinessException;
 import com.example.commerce.common.error.ErrorCode;
-import com.example.commerce.domain.refund.entity.RefundStatus;
+import com.example.commerce.domain.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.core.annotation.Order;
-
 import java.time.LocalDateTime;
 
-@Entity
 @Getter
+@Entity
+@Table(name = "payments")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
 
@@ -29,9 +28,10 @@ public class Payment extends BaseEntity {
     private Long amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private PaymentStatus status;
 
+    @Column(length = 50)
     private String failReason;
 
     private LocalDateTime paidAt;
@@ -46,20 +46,32 @@ public class Payment extends BaseEntity {
         return new Payment(order, amount);
     }
 
-    public void fail(String failReason){
-        vaildateReady();
+    // 상태전이: 결제 실패 - READY 상태에서만 실패 처리 가능
+    public void fail(String failReason) {
+        validateReadyStatus();
         this.status = PaymentStatus.FAILED;
         this.failReason = failReason;
     }
 
-    // PAID/FAILED로 이미 종결된 결제는 다시 전이될 수 없어야 하므로
-    private void vaildateReady() {
+    // 상태전이: 결제 취소 - 환불 시작 시 결제 완료 건에 한해 호출
+    public void cancel() {
+        validatePaidStatus();
+        this.status = PaymentStatus.CANCELED;
+    }
+
+    public boolean isPaid() {
+        return this.status == PaymentStatus.PAID;
+    }
+
+    private void validateReadyStatus() {
         if (this.status != PaymentStatus.READY) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
     }
 
-    public boolean isPaid() {
-        return this.status == PaymentStatus.PAID;
+    private void validatePaidStatus() {
+        if (this.status != PaymentStatus.PAID) {
+            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
     }
 }
