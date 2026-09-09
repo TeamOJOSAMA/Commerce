@@ -21,7 +21,7 @@ public class JwtProvider {
 
     public JwtProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration") long expiration
+            @Value("${jwt.expiration}") long expiration
     ) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes());
         this.expiration = expiration;
@@ -37,7 +37,7 @@ public class JwtProvider {
                 .claim("role", role.name())
                 .setIssuedAt(now)
                 .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.ES256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
