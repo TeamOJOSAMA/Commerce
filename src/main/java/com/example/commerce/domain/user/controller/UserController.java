@@ -22,6 +22,6 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getMe(@AuthenticationPrincipal AuthUser authUser) {
         UserResponse response = userService.getMe(authUser.getUserId());
 
-        return ResponseEntity.ok(ApiResponse.ok(response));
+        return ResponseEntity.ok(ApiResponse.ok("내 정보 조회에 성공했습니다.", response));
     }
 }
