@@ -20,7 +20,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 30)
     private String name;
 
-    @Column(nullable = false, updatable = true, unique = true, length = 10)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
     @Column(nullable = false, length = 255)
