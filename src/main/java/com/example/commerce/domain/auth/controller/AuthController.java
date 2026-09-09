@@ -2,9 +2,9 @@ package com.example.commerce.domain.auth.controller;
 
 import com.example.commerce.common.response.ApiResponse;
 import com.example.commerce.domain.auth.service.AuthService;
-import com.example.commerce.domain.user.dto.LoginRequest;
-import com.example.commerce.domain.user.dto.LoginResponse;
-import com.example.commerce.domain.user.dto.SignupRequest;
+import com.example.commerce.domain.auth.dto.LoginRequest;
+import com.example.commerce.domain.auth.dto.LoginResponse;
+import com.example.commerce.domain.auth.dto.SignupRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

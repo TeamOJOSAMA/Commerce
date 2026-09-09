@@ -46,6 +46,13 @@ public class Payment extends BaseEntity {
         return new Payment(order, amount);
     }
 
+    // 상태전이: 결제 승인 - READY 상태에서만 승인 가능 (중복 승인 자동 차단)
+    public void approve() {
+        validateReadyStatus();
+        this.status = PaymentStatus.PAID;
+        this.paidAt = LocalDateTime.now();
+    }
+
     // 상태전이: 결제 실패 - READY 상태에서만 실패 처리 가능
     public void fail(String failReason) {
         validateReadyStatus();
