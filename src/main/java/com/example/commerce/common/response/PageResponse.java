@@ -1,9 +1,5 @@
 package com.example.commerce.common.response;
 
-public class PageResponse {
-}
-package com.example.commerce.common.response;
-
 import org.springframework.data.domain.Page;
 
 import java.util.List;
