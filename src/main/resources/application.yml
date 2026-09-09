@@ -3,7 +3,7 @@ spring:
     name: commerce
 
   datasource:
-    url: jdbc:mysql://localhost:3306/commerce?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/commerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,8 +24,14 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    context-path: /api
 
 logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+jwt:
+  secret: ${JWT_SECRET:change-this-to-a-long-random-base64-secret-key-for-dev-only}
+  expiration: 3600000   # 1시간(ms), 필요에 맞게 조정
