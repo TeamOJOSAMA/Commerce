@@ -46,7 +46,13 @@ public enum ErrorCode {
     // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001","결제 정보를 찾을 수 없습니다."),
     AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_002","결제 금액이 일치하지 않습니다."),
-    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_003","처리할 수 없는 결제 상태입니다.");
+    INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_003","처리할 수 없는 결제 상태입니다."),
+
+    // 환불
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "REFUND_001", "환불 정보를 찾을 수 없습니다."),
+    REFUND_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "REFUND_002", "환불이 불가능한 결제 건입니다."),
+    REFUND_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "REFUND_003", "환불 가능한 상품이 없습니다."),
+    INVALID_REFUND_STATUS(HttpStatus.BAD_REQUEST, "REFUND_004", "처리할 수 없는 환불 상태입니다.");
 
     private final HttpStatus status;
     private final String code;
