@@ -58,7 +58,7 @@ public class Order extends BaseEntity {
 
     public Order(Long userId, List<OrderItem> orderItems) {
         if (orderItems == null || orderItems.isEmpty()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "주문 항목은 하나 이상 필요합니다.");
+            throw new BusinessException(ErrorCode.ORDER_ITEMS_REQUIRED);
         }
 
         calculateTotalAmount(orderItems);
@@ -75,6 +75,12 @@ public class Order extends BaseEntity {
         this.orderItems.add(orderItem);
     }
 
+    public long getTotalQuantity() {
+        return orderItems.stream()
+                .mapToLong(OrderItem::getQuantity)
+                .sum();
+    }
+
     public long getCouponEligibleAmount() {
         long eligibleAmount = 0L;
         for (OrderItem item : orderItems) {
@@ -87,16 +93,16 @@ public class Order extends BaseEntity {
 
     public void applyCoupon(Long userCouponId, Long discountAmount) {
         if (status != OrderStatus.PAYMENT_PENDING) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "결제 대기 중인 주문에만 쿠폰을 적용할 수 있습니다.");
+            throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, "결제 대기 중인 주문에만 쿠폰을 적용할 수 있습니다.");
         }
         if (this.userCouponId != null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 쿠폰이 적용된 주문입니다.");
+            throw new BusinessException(ErrorCode.ORDER_COUPON_ALREADY_APPLIED);
         }
         if (userCouponId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "사용할 쿠폰은 필수입니다.");
+            throw new BusinessException(ErrorCode.ORDER_COUPON_REQUIRED);
         }
         if (discountAmount == null || discountAmount < 0 || discountAmount > getCouponEligibleAmount()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "할인금액은 0 이상이며 쿠폰 적용 대상 금액을 초과할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_ORDER_COUPON_DISCOUNT);
         }
 
         this.userCouponId = userCouponId;
@@ -118,20 +124,20 @@ public class Order extends BaseEntity {
 
         for (OrderItem item : items) {
             if (item == null) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "주문 항목은 필수입니다.");
+                throw new BusinessException(ErrorCode.ORDER_ITEM_REQUIRED);
             }
             if (!uniqueItems.add(item)) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "동일한 주문 항목을 중복 등록할 수 없습니다.");
+                throw new BusinessException(ErrorCode.DUPLICATE_ORDER_ITEM);
             }
             if (item.getOrder() != null) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 주문에 속한 항목입니다.");
+                throw new BusinessException(ErrorCode.ORDER_ITEM_ALREADY_ASSIGNED);
             }
 
             try {
                 long subTotal = item.getSubTotal();
                 total = Math.addExact(total, subTotal);
             } catch (ArithmeticException e) {
-                throw new BusinessException(ErrorCode.INVALID_INPUT, "주문 금액이 허용 범위를 초과했습니다.");
+                throw new BusinessException(ErrorCode.ORDER_AMOUNT_OVERFLOW);
             }
         }
 
@@ -142,12 +148,12 @@ public class Order extends BaseEntity {
 
     private void changeStatus(OrderStatus target) {
         if (target == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "변경할 주문 상태는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, "변경할 주문 상태는 필수입니다.");
         }
 
         if (status != target && !status.canTransitTo(target)) {
             throw new BusinessException(
-                    ErrorCode.INVALID_INPUT,
+                    ErrorCode.INVALID_ORDER_STATUS,
                     "주문 상태를 " + status + "에서 " + target + "로 변경할 수 없습니다."
             );
         }

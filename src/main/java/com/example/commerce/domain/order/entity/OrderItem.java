@@ -45,10 +45,10 @@ public class OrderItem extends BaseEntity {
             Integer quantity
     ) {
         if (unitPrice == null || unitPrice < 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "상품 단가는 0 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_ORDER_ITEM_PRICE);
         }
         if (quantity == null || quantity <= 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "상품 수량은 1 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_ORDER_ITEM_QUANTITY);
         }
 
         this.productId = productId;
@@ -60,11 +60,11 @@ public class OrderItem extends BaseEntity {
 
     void setOrder(Order order) {
         if (order == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "주문은 필수입니다.");
+            throw new BusinessException(ErrorCode.ORDER_REQUIRED);
         }
 
         if (this.order != null && this.order != order) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 다른 주문에 등록된 항목입니다.");
+            throw new BusinessException(ErrorCode.ORDER_ITEM_ALREADY_ASSIGNED);
         }
 
         this.order = order;
