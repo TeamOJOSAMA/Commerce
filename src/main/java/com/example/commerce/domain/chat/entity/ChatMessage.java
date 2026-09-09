@@ -12,7 +12,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -29,6 +28,7 @@ import lombok.NoArgsConstructor;
 public class ChatMessage extends BaseEntity {
 
     private static final int TYPE_MAX_LENGTH = 30;
+    private static final int CONTENT_MAX_LENGTH = 1000;
     private static final String ENTER_MESSAGE_FORMAT = "%s님이 입장했습니다.";
     private static final String LEAVE_MESSAGE_FORMAT = "%s님이 퇴장했습니다.";
 
@@ -50,8 +50,7 @@ public class ChatMessage extends BaseEntity {
     @Column(name = "message_type", nullable = false, length = TYPE_MAX_LENGTH)
     private MessageType messageType;
 
-    @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, length = CONTENT_MAX_LENGTH)
     private String content;
 
     private ChatMessage(ChatRoom chatRoom, User sender, MessageType messageType, String content) {
