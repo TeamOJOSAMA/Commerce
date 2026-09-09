@@ -1,4 +1,4 @@
-package com.example.commerce.common.error;
+package com.example.commerce.common.exception;
 
 import com.example.commerce.common.response.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
