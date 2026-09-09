@@ -4,7 +4,6 @@ import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.order.entity.Order;
 import com.example.commerce.domain.order.repository.OrderRepository;
-import com.example.commerce.domain.payment.dto.PaymentCreateRequest;
 import com.example.commerce.domain.payment.dto.PaymentResponse;
 import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.payment.repository.PaymentRepository;
@@ -25,19 +24,17 @@ public class PaymentService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public PaymentResponse createPayment(PaymentCreateRequest paymentCreateRequest) {
-        Order order = getOrder(paymentCreateRequest.orderId());
-
+    public PaymentResponse createPayment(Order order, long amount) {
         // 하나의 주문에 대한 결제 요청은 한 번만 생성 가능 (중복 결제 요청 방지)
         validateDuplicatePayment(order.getId());
 
         // 클라이언트 요청 금액과 실제 주문 결제 금액 일치 검증
-        validatePaymentAmount(order, paymentCreateRequest.amount());
+        validatePaymentAmount(order, amount);
 
-        Payment payment = Payment.of(order, paymentCreateRequest.amount());
+        Payment payment = Payment.of(order, amount);
         Payment savedPayment = paymentRepository.save(payment);
 
-        log.info("결제 요청 생성 완료 - orderId: {}, amount: {}", order.getId(), paymentCreateRequest.amount());
+        log.info("결제 요청 생성 완료 - orderId: {}, amount: {}", order.getId(), amount);
         return PaymentResponse.from(savedPayment);
     }
 

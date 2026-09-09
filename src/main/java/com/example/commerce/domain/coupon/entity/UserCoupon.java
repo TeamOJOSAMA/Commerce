@@ -1,6 +1,7 @@
 package com.example.commerce.domain.coupon.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,13 +25,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserCoupon extends BaseEntity {
 
+    private static final int USER_COUPON_VALIDITY_DAYS = 14; // 14일 유효
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: 회원 도메인 연동 후 User 외래키로 바꿀 예정
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "coupon_id", nullable = false)
@@ -49,12 +52,12 @@ public class UserCoupon extends BaseEntity {
     @Column(name = "used_at")
     private LocalDateTime usedAt; // 쿠폰 사용일
 
-    public UserCoupon(Long userId, Coupon coupon) {
-        this.userId = userId;
+    public UserCoupon(User user, Coupon coupon) {
+        this.user = user;
         this.coupon = coupon;
         this.status = UserCouponStatus.AVAILABLE; // 쿠폰 발급시
         this.issuedAt = LocalDateTime.now();
-        this.expiresAt = issuedAt.plusDays(14); // 14일 유효
+        this.expiresAt = issuedAt.plusDays(USER_COUPON_VALIDITY_DAYS);
     }
 
     public void reservedUserCoupon() {

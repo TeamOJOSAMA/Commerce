@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Coupon extends BaseEntity {
 
+    private static final int COUPON_ISSUE_PERIOD_MONTHS = 6; // 6개월 유효
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -63,7 +65,7 @@ public class Coupon extends BaseEntity {
         this.issuedQuantity = 0; // default:0 스키마 반영
         this.status = CouponStatus.ACTIVE; // 쿠폰 발급 오픈
         this.issueStartsAt = LocalDateTime.now();
-        this.issueEndsAt = issueStartsAt.plusMonths(6); // 6개월 유효
+        this.issueEndsAt = issueStartsAt.plusMonths(COUPON_ISSUE_PERIOD_MONTHS);
     }
 
     public void expiredCoupon() {

@@ -1,7 +1,6 @@
 package com.example.commerce.domain.payment.controller;
 
 import com.example.commerce.common.response.ApiResponse;
-import com.example.commerce.domain.payment.dto.PaymentCreateRequest;
 import com.example.commerce.domain.payment.dto.PaymentFailRequest;
 import com.example.commerce.domain.payment.dto.PaymentResponse;
 import com.example.commerce.domain.payment.service.PaymentService;
@@ -15,11 +14,6 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentService paymentService;
-
-    @PostMapping
-    public ApiResponse<PaymentResponse> createPayment(@Valid @RequestBody PaymentCreateRequest paymentCreateRequest) {
-        return ApiResponse.ok(paymentService.createPayment(paymentCreateRequest));
-    }
 
     @PostMapping("/{paymentId}/approve")
     public ApiResponse<PaymentResponse> approvePayment(@PathVariable Long paymentId) {
