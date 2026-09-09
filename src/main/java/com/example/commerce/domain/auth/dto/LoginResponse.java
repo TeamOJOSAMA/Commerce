@@ -1,4 +1,4 @@
-package com.example.commerce.domain.user.dto;
+package com.example.commerce.domain.auth.dto;
 
 public record LoginResponse(
         String token
