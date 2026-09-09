@@ -1,7 +1,7 @@
 package com.example.commerce.domain.auth.service;
 
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.common.jwt.JwtProvider;
 import com.example.commerce.domain.user.dto.LoginRequest;
 import com.example.commerce.domain.user.dto.LoginResponse;

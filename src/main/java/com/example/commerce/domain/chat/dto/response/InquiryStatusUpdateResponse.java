@@ -1,9 +1,5 @@
 package com.example.commerce.domain.chat.dto.response;
 
-public record InquiryStatusUpdateResponse() {
-}
-package com.example.commerce.domain.chat.dto.response;
-
 import com.example.commerce.domain.chat.entity.ChatRoom;
 import com.example.commerce.domain.chat.entity.InquiryStatus;
 

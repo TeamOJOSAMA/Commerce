@@ -11,7 +11,7 @@
 <ul id="messageList"></ul>
 
 <script>
-    const socket = new WebSocket("ws://localhost:8080/ws-echo");
+    const socket = new WebSocket("ws://localhost:8080/api/ws-echo");
 
     socket.onopen = () => appendMessage("연결됨");
     socket.onmessage = (event) => appendMessage("수신: " + event.data);
