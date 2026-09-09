@@ -1,8 +1,8 @@
 package com.example.commerce.domain.payment.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -44,6 +44,13 @@ public class Payment extends BaseEntity {
 
     public static Payment of(Order order, Long amount) {
         return new Payment(order, amount);
+    }
+
+    // 상태전이: 결제 승인 - READY 상태에서만 승인 가능 (중복 승인 자동 차단)
+    public void approve() {
+        validateReadyStatus();
+        this.status = PaymentStatus.PAID;
+        this.paidAt = LocalDateTime.now();
     }
 
     // 상태전이: 결제 실패 - READY 상태에서만 실패 처리 가능

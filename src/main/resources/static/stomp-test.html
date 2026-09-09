@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>STOMP 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h3>STOMP 채팅 테스트</h3>
+
+<div>
+    방 번호: <input type="text" id="roomIdInput" value="1">
+    <button onclick="connect()">연결</button>
+</div>
+<br>
+<div>
+    <input type="text" id="messageInput" placeholder="메시지 입력">
+    <button onclick="sendMessage()">전송</button>
+</div>
+<ul id="messageList"></ul>
+
+<script>
+    let stompClient = null;
+    let roomId = null;
+
+    function connect() {
+        roomId = document.getElementById("roomIdInput").value;
+        const socket = new SockJS("http://localhost:8080/api/ws-stomp");
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, () => {
+            appendMessage(roomId + "번 방 연결됨");
+
+            stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
+                const body = JSON.parse(message.body);
+                appendMessage("수신: " + body.content);
+            });
+        });
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("messageInput");
+        stompClient.send(
+            "/pub/chat-rooms/" + roomId + "/messages",
+            {},
+            JSON.stringify({ content: input.value })
+        );
+        input.value = "";
+    }
+
+    function appendMessage(text) {
+        const item = document.createElement("li");
+        item.textContent = text;
+        document.getElementById("messageList").appendChild(item);
+    }
+</script>
+</body>
+</html>

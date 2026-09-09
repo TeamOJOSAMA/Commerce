@@ -1,5 +1,6 @@
 package com.example.commerce.common.response;
 
+import com.example.commerce.common.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 
@@ -25,5 +26,14 @@ public class ApiResponse<T> {
 
     public static ApiResponse<Void> ok(String message) {
         return new ApiResponse<>(SUCCESS_CODE, message, null);
+    }
+
+    // ApiResponse - error() 정적 팩토리 (data 필드는 @JsonInclude(NON_NULL)로 응답 시 자동 제외)
+    public static ApiResponse<Void> error(ErrorCode errorCode) {
+        return new ApiResponse<>(errorCode.getCode(), errorCode.getMessage(), null);
+    }
+
+    public static ApiResponse<Void> error(ErrorCode errorCode, String message) {
+        return new ApiResponse<>(errorCode.getCode(), message, null);
     }
 }
