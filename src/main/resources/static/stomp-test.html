@@ -5,37 +5,85 @@
     <title>STOMP 테스트</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        section { margin-bottom: 16px; }
+        input { padding: 4px; }
+        #tokenInput { width: 500px; }
+    </style>
 </head>
 <body>
 <h3>STOMP 채팅 테스트</h3>
 
-<div>
+<section>
+    <h4>1. 로그인</h4>
+    이메일: <input type="text" id="emailInput" value="test@test.com">
+    비밀번호: <input type="password" id="passwordInput" value="password123">
+    <button onclick="login()">로그인</button>
+</section>
+
+<section>
+    <h4>2. 토큰</h4>
+    <input type="text" id="tokenInput" placeholder="로그인하면 자동으로 채워집니다">
+</section>
+
+<section>
+    <h4>3. 연결</h4>
     방 번호: <input type="text" id="roomIdInput" value="1">
     <button onclick="connect()">연결</button>
-</div>
-<br>
-<div>
+</section>
+
+<section>
+    <h4>4. 메시지</h4>
     <input type="text" id="messageInput" placeholder="메시지 입력">
     <button onclick="sendMessage()">전송</button>
-</div>
+</section>
+
 <ul id="messageList"></ul>
 
 <script>
+    const BASE_URL = "http://localhost:8080/api";
+
     let stompClient = null;
     let roomId = null;
 
+    async function login() {
+        const response = await fetch(BASE_URL + "/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: document.getElementById("emailInput").value,
+                password: document.getElementById("passwordInput").value
+            })
+        });
+
+        const result = await response.json();
+        console.log("로그인 응답:", result);
+
+        // 응답 구조에 맞게 토큰 경로를 조정해야 할 수 있다
+        const token = result.data?.accessToken ?? result.data?.token ?? result.data;
+        document.getElementById("tokenInput").value = token;
+
+        appendMessage("로그인 완료");
+    }
+
     function connect() {
         roomId = document.getElementById("roomIdInput").value;
-        const socket = new SockJS("http://localhost:8080/api/ws-stomp");
+        const token = document.getElementById("tokenInput").value;
+
+        const socket = new SockJS(BASE_URL + "/ws-stomp");
         stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, () => {
+        // CONNECT 프레임 헤더로 토큰을 전달한다
+        stompClient.connect({ Authorization: token }, () => {
             appendMessage(roomId + "번 방 연결됨");
 
             stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
                 const body = JSON.parse(message.body);
                 appendMessage("수신: " + body.content);
             });
+        }, (error) => {
+            appendMessage("연결 실패: " + error);
         });
     }
 
