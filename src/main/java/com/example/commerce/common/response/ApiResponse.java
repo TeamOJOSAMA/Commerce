@@ -23,6 +23,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>(SUCCESS_CODE, null, data);
     }
 
+    public static <T> ApiResponse<T> ok(String message, T data) {
+        return new ApiResponse<>(SUCCESS_CODE, message, data);
+    }
+
     public static ApiResponse<Void> ok() {
         return new ApiResponse<>(SUCCESS_CODE, null, null);
     }
