@@ -12,7 +12,10 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "payments")
+@Table(name = "payments", uniqueConstraints = @UniqueConstraint(
+        name = "uk_payments_order_id", columnNames = "order_id"))   // order_id 유니크 제약: "한 주문당 결제 1건"을 DB가 강제
+                                                                    // existsByOrderId 체크와 save 사이 레이스로 동시 요청이 둘 다 통과해도
+                                                                    // 두 번째 INSERT를 DB가 막아 중복 결제 생성이 원천 차단된다.
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
 
