@@ -36,4 +36,13 @@ public class User extends BaseEntity {
         this.password = password;
         this.role = role;
     }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
+    }
+
+    public boolean isAdmin() {
+
+        return this.role == UserRole.ADMIN;
+    }
 }
