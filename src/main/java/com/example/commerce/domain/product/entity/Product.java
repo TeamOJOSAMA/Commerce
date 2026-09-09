@@ -1,8 +1,8 @@
 package com.example.commerce.domain.product.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,6 +36,8 @@ public class Product extends BaseEntity {
     private ProductStatus status;
 
     private Long viewCount = 0L;
+
+    private Integer eventStock;
 
 
     public Product(String name, String description, ProductCategory category, Long price, int stock, ProductStatus status) {

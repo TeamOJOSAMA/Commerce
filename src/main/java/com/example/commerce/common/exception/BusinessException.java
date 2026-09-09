@@ -1,4 +1,4 @@
-package com.example.commerce.common.error;
+package com.example.commerce.common.exception;
 
 import lombok.Getter;
 
