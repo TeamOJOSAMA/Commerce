@@ -1,7 +1,7 @@
 package com.example.commerce.domain.product.service;
 
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
 import com.example.commerce.domain.product.entity.Product;
@@ -14,11 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
-@Transactional(readOnly = true)
+@Transactional
 public class ProductService {
 
     private final ProductRepository productRepository;
-
+    @Transactional(readOnly = true)
     public Page<ProductResponse> searchProduct(SearchProductRequest request, Pageable pageable) {
         validateSearchCondition(request);
 
@@ -32,6 +32,12 @@ public class ProductService {
         product.increaseViewCount();
 
         return ProductResponse.from(product);
+    }
+
+    public Page<ProductResponse> getPopularProducts(Pageable pageable) {
+        return productRepository
+                .findAllByOrderByViewCountDesc(pageable)
+                .map(ProductResponse::from);
     }
 
     private void validateSearchCondition(SearchProductRequest request) {

@@ -31,4 +31,11 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> getProductDetail(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(productService.getProductDetail(id)));
     }
+
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getPopularProducts(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.getPopularProducts(pageable)));
+    }
 }
