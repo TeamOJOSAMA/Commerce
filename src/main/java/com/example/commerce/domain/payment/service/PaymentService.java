@@ -9,6 +9,7 @@ import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentService {
-
-    private static final String DUPLICATE_PAYMENT_MESSAGE = "이미 결제 요청이 존재하는 주문입니다.";
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
@@ -32,10 +31,22 @@ public class PaymentService {
         validatePaymentAmount(order, amount);
 
         Payment payment = Payment.of(order, amount);
-        Payment savedPayment = paymentRepository.save(payment);
+
+        Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.saveAndFlush(payment);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.PAYMENT_DUPLICATED);
+        }
 
         log.info("결제 요청 생성 완료 - orderId: {}, amount: {}", order.getId(), amount);
         return PaymentResponse.from(savedPayment);
+    }
+
+    private void validateDuplicatePayment(Long orderId) {
+        if (paymentRepository.existsByOrderId(orderId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_DUPLICATED);
+        }
     }
 
     @Transactional
@@ -70,12 +81,6 @@ public class PaymentService {
     private Order getOrder(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-    }
-
-    private void validateDuplicatePayment(Long orderId) {
-        if (paymentRepository.existsByOrderId(orderId)) {
-            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS, DUPLICATE_PAYMENT_MESSAGE);
-        }
     }
 
     private void validatePaymentAmount(Order order, Long requestAmount) {
