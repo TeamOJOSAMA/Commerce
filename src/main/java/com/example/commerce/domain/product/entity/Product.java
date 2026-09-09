@@ -35,6 +35,8 @@ public class Product extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
 
+    private Long viewCount = 0L;
+
 
     public Product(String name, String description, ProductCategory category, Long price, int stock, ProductStatus status) {
         this.name = name;
@@ -45,15 +47,10 @@ public class Product extends BaseEntity {
         this.stock = stock;
     }
 
-    public void decreaseStock(int quantity) {
-        if(quantity <= 0){
-            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+    private void validateQuantity(int quantity) {
+        if (quantity <= 0) {
+            throw new BusinessException(ErrorCode.NOT_SUFFICIENT_AMOUNT);
         }
-        if(this.stock < quantity) {
-            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
-        }
-        this.stock -= quantity;
-
     }
 
     private void setStatus(ProductStatus nextStatus) {
@@ -73,6 +70,31 @@ public class Product extends BaseEntity {
 
     public void event(){
         setStatus(ProductStatus.ON_EVENT);
+    }
+
+    public void restoreStock(int quantity) {
+        validateQuantity(quantity);
+
+        this.stock += quantity;
+
+        if (this.status == ProductStatus.SOLDOUT && this.stock > 0) {
+            this.status = ProductStatus.ON_SALE;
+        }
+    }
+
+    public void decreaseStock(int quantity) {
+        if(quantity <= 0){
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+        }
+        if(this.stock < quantity) {
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+        }
+        this.stock -= quantity;
+
+    }
+
+    public void increaseViewCount() {
+        this.viewCount++;
     }
 
 
