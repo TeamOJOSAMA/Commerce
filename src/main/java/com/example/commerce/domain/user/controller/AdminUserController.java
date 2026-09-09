@@ -3,9 +3,13 @@ package com.example.commerce.domain.user.controller;
 import com.example.commerce.common.response.ApiResponse;
 import com.example.commerce.domain.user.dto.UpdateRoleRequest;
 import com.example.commerce.domain.user.dto.UserResponse;
+import com.example.commerce.domain.user.entity.UserRole;
 import com.example.commerce.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,9 +23,11 @@ public class AdminUserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
-
-        return ResponseEntity.ok(ApiResponse.ok(userService.getUsers()));
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> getUsers(
+            @RequestParam(required = false) UserRole role,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.getUsers(role, pageable)));
     }
 
     @PatchMapping("/{userId}/role")

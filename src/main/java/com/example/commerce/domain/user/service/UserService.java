@@ -7,6 +7,8 @@ import com.example.commerce.domain.user.entity.User;
 import com.example.commerce.domain.user.entity.UserRole;
 import com.example.commerce.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +26,10 @@ public class UserService {
         return UserResponse.from(user);
     }
 
-    public List<UserResponse> getUsers() {
+    public Page<UserResponse> getUsers(UserRole role, Pageable pageable) {
 
-        return userRepository.findAll().stream()
-                .map(UserResponse::from)
-                .toList();
+        return userRepository.searchUsers(role, pageable)
+                .map(UserResponse::from);
     }
 
     @Transactional
