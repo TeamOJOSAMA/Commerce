@@ -29,16 +29,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
 
+    // 인증 없이 통과시킬 경로
+    // WebSocket 핸드셰이크는 헤더에 토큰을 실을 수 없어 STOMP CONNECT 시점에 인증한다
+    private static final List<String> PERMITTED_PATH_PREFIXES = List.of(
+            "/auth",
+            "/ws-stomp",
+            "/ws-echo"
+    );
+
+    private static final String HTML_SUFFIX = ".html";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain)
             throws ServletException, IOException {
-        if (request.getServletPath().startsWith("/auth")) {
+        if (isPermittedPath(request.getServletPath())) {
             chain.doFilter(request, response);
 
             return;
         }
+
 
         String bearerJwt = request.getHeader("Authorization");
         if (bearerJwt == null) {
@@ -78,5 +89,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원되지 않거나 잘못된 JWT 토큰입니다.");
         }
+    }
+
+    private boolean isPermittedPath(String path) {
+        return PERMITTED_PATH_PREFIXES.stream().anyMatch(path::startsWith)
+                || path.endsWith(HTML_SUFFIX);
     }
 }

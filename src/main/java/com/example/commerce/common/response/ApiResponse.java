@@ -1,6 +1,6 @@
 package com.example.commerce.common.response;
 
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 

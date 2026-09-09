@@ -1,7 +1,7 @@
 package com.example.commerce.domain.user.service;
 
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.user.dto.UserResponse;
 import com.example.commerce.domain.user.entity.User;
 import com.example.commerce.domain.user.entity.UserRole;
