@@ -1,8 +1,8 @@
 package com.example.commerce.domain.order.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
-import com.example.commerce.common.error.BusinessException;
-import com.example.commerce.common.error.ErrorCode;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

@@ -1,11 +1,17 @@
 package com.example.commerce.domain.user.repository;
 
 import com.example.commerce.domain.user.entity.User;
+import com.example.commerce.domain.user.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
+
     boolean existsByEmail(String email);
+
     Optional<User> findByEmail(String email);
+
+    long countByRole(UserRole role);
 }
+
