@@ -8,7 +8,7 @@ import java.util.List;
 public record GetCartResponse(
         Long cartId,
         List<Items> items,
-        Integer totalPrice,
+        Long totalPrice,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -17,21 +17,21 @@ public record GetCartResponse(
 
         List<Items> items = cart.getCartItems().stream()
                 .map(cartItem -> {
-                    int subtotal = cartItem.getQuantity(); // TODO: 가격 연동되면 여기에 가격 곱할 예정
+                    long subtotal = cartItem.getQuantity() * cartItem.getProduct().getPrice();
 
                     return new Items(
                             cartItem.getId(),
-                            cartItem.getProductId(),
-                            null, // TODO: Product 엔티티와 연동되면 getProductName()으로 변경 예정
-                            null, // TODO: Product 엔티티와 연동되면 getPrice()로 변경 예정
+                            cartItem.getProduct().getId(),
+                            cartItem.getProduct().getName(),
+                            cartItem.getProduct().getPrice(),
                             cartItem.getQuantity(),
                             subtotal
                     );
                 })
                 .toList();
 
-        int totalPrice = items.stream()
-                .mapToInt(Items::subtotal)
+        long totalPrice = items.stream()
+                .mapToLong(Items::subtotal)
                 .sum();
 
         return new GetCartResponse(cart.getId(), items, totalPrice, cart.getCreatedAt(), cart.getUpdatedAt());
@@ -41,9 +41,9 @@ public record GetCartResponse(
             Long cartItemId,
             Long productId,
             String productName,
-            Integer price,
+            Long price,
             Integer quantity,
-            Integer subtotal
+            Long subtotal
     ) {
     }
 }
