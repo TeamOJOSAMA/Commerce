@@ -19,6 +19,8 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "USER_001","이미 가입된 이메일입니다."),
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_002","회원을 찾을 수 없습니다."),
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "USER_003","이메일 또는 비밀번호가 일치하지 않습니다."),
+    LAST_ADMIN_CANNOT_BE_DEMOTED(HttpStatus.BAD_REQUEST, "USER_004","마지막 관리자는 권한을 변경할 수 없습니다."),
+
 
     // 상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_001","상품을 찾을 수 없습니다."),

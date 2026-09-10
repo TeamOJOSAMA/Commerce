@@ -16,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -35,6 +36,14 @@ public class UserService {
     @Transactional
     public void updateRole(Long userId, UserRole role) {
         User user = findUser(userId);
+
+        // 본인말고 ADMIN이 없는 상태에서 자신을 바꾸려고 한다면 예외처리
+        if (user.getRole() == UserRole.ADMIN
+        && role != UserRole.ADMIN
+        && userRepository.countByRole(UserRole.ADMIN) <= 1) {
+            throw new BusinessException(ErrorCode.LAST_ADMIN_CANNOT_BE_DEMOTED);
+        }
+
         user.changeRole(role);
     }
 
