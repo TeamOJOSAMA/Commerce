@@ -32,11 +32,16 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private UserRole role;
 
-    public User(String name, String email, String password, UserRole role) {
+    private User(String name, String email, String password, UserRole role) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
+    }
+
+    public static User of(String name, String email, String password, UserRole role) {
+
+        return new User(name, email, password, role);
     }
 
     public void changeRole(UserRole role) {
