@@ -33,7 +33,6 @@ public class CartItem extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-
     @Column(nullable = false)
     private Integer quantity; // 장바구니 내 물품의 수량
 
@@ -41,6 +40,11 @@ public class CartItem extends BaseEntity {
         this.cart = cart;
         this.product = product;
         this.quantity = quantity;
+    }
+
+    // CartItem: 연관관계의 주인인 CartItem에 장바구니를 설정
+    public void assignCart(Cart cart) {
+        this.cart = cart;
     }
 
     // 수량 변경
