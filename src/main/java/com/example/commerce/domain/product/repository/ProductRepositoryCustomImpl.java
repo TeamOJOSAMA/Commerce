@@ -31,7 +31,9 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                         product.category,
                         product.price,
                         product.stock,
-                        product.status
+                        product.status,
+                        product.eventPrice,
+                        product.discountRate
                 ))
                 .from(product)
                 .where(builder)
@@ -39,13 +41,13 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(product.count())
                 .from(product)
                 .where(builder)
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total);
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
     }
 
     private BooleanBuilder searchCondition(SearchProductRequest request) {
@@ -54,19 +56,15 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         if (request.name() != null && !request.name().isBlank()) {
             builder.and(product.name.contains(request.name()));
         }
-
         if (request.category() != null) {
             builder.and(product.category.eq(request.category()));
         }
-
         if (request.minPrice() != null) {
             builder.and(product.price.goe(request.minPrice()));
         }
-
         if (request.maxPrice() != null) {
             builder.and(product.price.loe(request.maxPrice()));
         }
-
         if (request.status() != null) {
             builder.and(product.status.eq(request.status()));
         }
