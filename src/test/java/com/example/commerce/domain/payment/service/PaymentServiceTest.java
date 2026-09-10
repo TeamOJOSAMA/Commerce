@@ -27,6 +27,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 
+// mock 저장소로 결제 상태와 응답 변환을 확인하는 테스트이며 실제 동시 트랜잭션을 실행하지 않는다.
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
 
@@ -51,7 +52,7 @@ class PaymentServiceTest {
     void setUp() {
         lenient().when(order.getId()).thenReturn(ORDER_ID);
 
-lenient().when(order.getPaymentAmount()).thenReturn(PAYMENT_AMOUNT);
+        lenient().when(order.getPaymentAmount()).thenReturn(PAYMENT_AMOUNT);
     }
 
     // -------- createPayment --------
@@ -60,16 +61,18 @@ lenient().when(order.getPaymentAmount()).thenReturn(PAYMENT_AMOUNT);
     @DisplayName("결제 생성 성공 - READY 상태로 저장된다")
     void createPayment_success() {
 
-given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
+        given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
         given(paymentRepository.saveAndFlush(any(Payment.class)))
                 .willAnswer(invocation ->  invocation.getArgument(0));
 
-        PaymentResponse response = paymentService.createPayment(order, PAYMENT_AMOUNT);
+        // 생성 메서드는 내부 도메인 객체를 반환하므로 DTO 대신 저장 대상 Payment의 상태를 확인한다.
+        Payment payment = paymentService.createPayment(order, PAYMENT_AMOUNT);
 
-        assertThat(response.orderId()).isEqualTo(ORDER_ID);
-        assertThat(response.amount()).isEqualTo(PAYMENT_AMOUNT);
-        assertThat(response.status()).isEqualTo(PaymentStatus.READY);
-        assertThat(response.paidAt()).isNull();
+        assertThat(payment.getOrder().getId()).isEqualTo(ORDER_ID);
+        assertThat(payment.getAmount()).isEqualTo(PAYMENT_AMOUNT);
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.READY);
+        // READY 생성만으로 결제 완료 시각이 기록되면 안 된다.
+        assertThat(payment.getPaidAt()).isNull();
     }
 
     @Test
@@ -87,7 +90,7 @@ given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
     @DisplayName("동시 요청으로 유니크 제약 위반이 나면 PAYMENT_DUPLICATED 로 변환한다 (2차 방어)")
     void createPayment_duplicate_raceCondition() {
 
-given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
+        given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
         given(paymentRepository.saveAndFlush(any(Payment.class)))
                 .willThrow(new DataIntegrityViolationException("uk_payments_order_id"));
 
@@ -104,7 +107,7 @@ given(paymentRepository.existsByOrderId(ORDER_ID)).willReturn(false);
     void approvePayment_success() {
         Payment payment = Payment.of(order, PAYMENT_AMOUNT);
 
-given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
+        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
 
         PaymentResponse response = paymentService.approvePayment(PAYMENT_ID);
 
@@ -118,7 +121,7 @@ given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
         Payment payment = Payment.of(order, PAYMENT_AMOUNT);
         payment.approve();
 
-given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
+        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
 
         assertThatThrownBy(() -> paymentService.approvePayment(PAYMENT_ID))
                 .isInstanceOf(BusinessException.class)
@@ -129,7 +132,7 @@ given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
     @Test
     @DisplayName("존재하지 않는 결제를 승인하면 PAYMENT_NOT_FOUND")
     void approvePayment_notFound() {
-given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
+        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> paymentService.approvePayment(PAYMENT_ID))
                 .isInstanceOf(BusinessException.class)
@@ -144,7 +147,7 @@ given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
     void failPayment_success() {
         Payment payment = Payment.of(order, PAYMENT_AMOUNT);
 
-given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
+        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
 
         PaymentResponse response = paymentService.failPayment(PAYMENT_ID, "카드 한도 초과");
 
@@ -158,7 +161,7 @@ given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
     @DisplayName("존재하지 않는 결제를 조회하면 PAYMENT_NOT_FOUND")
     void getPaymentDetail_notFound() {
 
-given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
+        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> paymentService.getPaymentDetail(PAYMENT_ID))
                 .isInstanceOf(BusinessException.class)

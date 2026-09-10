@@ -26,8 +26,9 @@ public class Event {
     @Column(name = "discount_rate", nullable = false)
     private int discountRate;
 
+    // 주문의 long 금액 계산과 타입을 맞춘 최종 행사 단가다.
     @Column(name = "event_price", nullable = false)
-    private int eventPrice;
+    private long eventPrice;
 
     @Column(name = "total_quantity", nullable = false)
     private int totalQuantity;
