@@ -1,5 +1,7 @@
 package com.example.commerce.domain.chat.controller;
 
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.response.ApiErrorResponse;
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.chat.dto.request.ChatMessageSendRequest;
 import com.example.commerce.domain.chat.dto.response.ChatMessageResponse;
@@ -22,6 +24,7 @@ public class ChatMessageController {
 
     private static final String SUBSCRIBE_DESTINATION = "/sub/chat-rooms/";
     private static final String STATUS_DESTINATION_SUFFIX = "/status";
+    private static final String ERROR_DESTINATION_SUFFIX = "/errors";
 
     private final ChatMessageService chatMessageService;
     private final ChatBotService chatBotService;
@@ -33,12 +36,16 @@ public class ChatMessageController {
                             Principal principal) {
         AuthUser authUser = extractAuthUser(principal);
 
-        // 고객 메시지를 먼저 저장하고 브로드캐스트한다
-        ChatMessageResponse customerMessage = chatMessageService.sendMessage(
-                chatRoomId, authUser.getUserId(), request.content());
-        broadcast(chatRoomId, customerMessage);
+        try {
+            // 고객 메시지를 먼저 저장하고 브로드캐스트한다
+            ChatMessageResponse customerMessage = chatMessageService.sendMessage(
+                    chatRoomId, authUser.getUserId(), request.content());
+            broadcast(chatRoomId, customerMessage);
 
-        replyIfBotTurn(chatRoomId, request.content());
+            replyIfBotTurn(chatRoomId, request.content());
+        } catch (BusinessException e) {
+            sendError(chatRoomId, e);
+        }
     }
 
     // 봇 응대 중일 때만 자동응답한다
@@ -77,6 +84,14 @@ public class ChatMessageController {
     private void notifyStatusChanged(Long chatRoomId, String status) {
         messagingTemplate.convertAndSend(
                 SUBSCRIBE_DESTINATION + chatRoomId + STATUS_DESTINATION_SUFFIX, status);
+    }
+
+    private void sendError(Long chatRoomId, BusinessException e) {
+        log.warn("STOMP 메시지 처리 실패: {}", e.getMessage());
+
+        messagingTemplate.convertAndSend(
+                SUBSCRIBE_DESTINATION + chatRoomId + ERROR_DESTINATION_SUFFIX,
+                ApiErrorResponse.of(e.getErrorCode()));
     }
 
     private AuthUser extractAuthUser(Principal principal) {

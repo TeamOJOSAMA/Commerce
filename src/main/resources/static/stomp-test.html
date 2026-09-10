@@ -60,7 +60,6 @@
         const result = await response.json();
         console.log("로그인 응답:", result);
 
-        // 응답 구조에 맞게 토큰 경로를 조정해야 할 수 있다
         const token = result.data?.accessToken ?? result.data?.token ?? result.data;
         document.getElementById("tokenInput").value = token;
 
@@ -81,6 +80,12 @@
             stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
                 const body = JSON.parse(message.body);
                 appendMessage("[" + body.senderName + "] " + body.content);
+            });
+
+            // 해당 방의 에러
+            stompClient.subscribe("/sub/chat-rooms/" + roomId + "/errors", (message) => {
+                const error = JSON.parse(message.body);
+                appendMessage("에러: [" + error.code + "] " + error.message);
             });
         }, (error) => {
             appendMessage("연결 실패: " + error);
