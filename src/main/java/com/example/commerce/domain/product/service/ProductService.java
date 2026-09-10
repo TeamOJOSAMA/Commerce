@@ -35,23 +35,21 @@ public class ProductService {
     }
 
     public Page<ProductResponse> getPopularProducts(Pageable pageable) {
-        return productRepository
-                .findAllByOrderByViewCountDesc(pageable)
-                .map(ProductResponse::from);
+        return productRepository.findPopularProducts(pageable);
     }
 
     private void validateSearchCondition(SearchProductRequest request) {
         if (request.minPrice() != null && request.minPrice() < 0) {
-            throw new BusinessException(ErrorCode.NOT_SUFFICIENT_AMOUNT);
+            throw new BusinessException(ErrorCode.INVALID_SEARCH_CONDITION);
         }
 
         if (request.maxPrice() != null && request.maxPrice() < 0) {
-            throw new BusinessException(ErrorCode.NOT_SUFFICIENT_AMOUNT);
+            throw new BusinessException(ErrorCode.INVALID_SEARCH_CONDITION);
         }
 
         if (request.minPrice() != null && request.maxPrice() != null
                 && request.minPrice() > request.maxPrice()) {
-            throw new BusinessException(ErrorCode.PRICE_ERROR);
+            throw new BusinessException(ErrorCode.INVALID_SEARCH_CONDITION);
         }
     }
 }
