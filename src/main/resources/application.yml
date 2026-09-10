@@ -35,3 +35,10 @@ logging:
 jwt:
   secret: ${JWT_SECRET:change-this-to-a-long-random-base64-secret-key-for-dev-only}
   expiration: 3600000   # 1시간(ms), 필요에 맞게 조정
+
+chat:
+  bot-user-id: ${CHAT_BOT_USER_ID:2}
+  idle-timeout-minutes: 5
+  cleanup-interval-ms: 60000
+  #idle time : 1 / interval-ms 10000 으로 하면 1분안에 테스트 가능. 단 문구는 '5분동안 문의가..'로 뜸
+

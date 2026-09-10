@@ -3,6 +3,7 @@ package com.example.commerce.domain.chat.controller;
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.chat.dto.request.ChatMessageSendRequest;
 import com.example.commerce.domain.chat.dto.response.ChatMessageResponse;
+import com.example.commerce.domain.chat.service.ChatBotService;
 import com.example.commerce.domain.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,10 @@ import java.security.Principal;
 public class ChatMessageController {
 
     private static final String SUBSCRIBE_DESTINATION = "/sub/chat-rooms/";
+    private static final String STATUS_DESTINATION_SUFFIX = "/status";
 
     private final ChatMessageService chatMessageService;
+    private final ChatBotService chatBotService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat-rooms/{chatRoomId}/messages")
@@ -30,10 +33,50 @@ public class ChatMessageController {
                             Principal principal) {
         AuthUser authUser = extractAuthUser(principal);
 
-        ChatMessageResponse response = chatMessageService.sendMessage(
+        // 고객 메시지를 먼저 저장하고 브로드캐스트한다
+        ChatMessageResponse customerMessage = chatMessageService.sendMessage(
                 chatRoomId, authUser.getUserId(), request.content());
+        broadcast(chatRoomId, customerMessage);
 
-        messagingTemplate.convertAndSend(SUBSCRIBE_DESTINATION + chatRoomId, response);
+        replyIfBotTurn(chatRoomId, request.content());
+    }
+
+    // 봇 응대 중일 때만 자동응답한다
+    private void replyIfBotTurn(Long chatRoomId, String content) {
+        if (!chatBotService.isBotTurn(chatMessageService.getChatRoom(chatRoomId))) {
+            return;
+        }
+
+        if (chatBotService.isEscalateRequest(content)) {
+            broadcast(chatRoomId, chatBotService.escalate(chatRoomId));
+            notifyStatusChanged(chatRoomId, "WAITING");
+
+            return;
+        }
+
+        if (chatBotService.isCloseRequest(content)) {
+            broadcast(chatRoomId, chatBotService.close(chatRoomId));
+            notifyStatusChanged(chatRoomId, "COMPLETED");
+
+            return;
+        }
+
+        if (chatBotService.isContinueRequest(content)) {
+            broadcast(chatRoomId, chatBotService.resume(chatRoomId));
+
+            return;
+        }
+
+        broadcast(chatRoomId, chatBotService.reply(chatRoomId, content));
+    }
+
+    private void broadcast(Long chatRoomId, ChatMessageResponse message) {
+        messagingTemplate.convertAndSend(SUBSCRIBE_DESTINATION + chatRoomId, message);
+    }
+
+    private void notifyStatusChanged(Long chatRoomId, String status) {
+        messagingTemplate.convertAndSend(
+                SUBSCRIBE_DESTINATION + chatRoomId + STATUS_DESTINATION_SUFFIX, status);
     }
 
     private AuthUser extractAuthUser(Principal principal) {

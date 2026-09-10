@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
@@ -33,4 +34,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<ChatMessage> findSliceAfter(@Param("chatRoomId") Long chatRoomId,
                                      @Param("cursor") Long cursor,
                                      Pageable pageable);
+
+    // 마지막 메시지 시각이 기준 시각보다 오래된 채팅방 ID 목록
+    @Query("""
+            SELECT m.chatRoom.id FROM ChatMessage m
+            WHERE m.chatRoom.inquiryStatus = com.example.commerce.domain.chat.entity.InquiryStatus.BOT_HANDLING
+            GROUP BY m.chatRoom.id
+            HAVING MAX(m.createdAt) < :threshold
+            """)
+    List<Long> findIdleChatRoomIds(@Param("threshold") LocalDateTime threshold);
+
 }

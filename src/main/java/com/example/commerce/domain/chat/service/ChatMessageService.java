@@ -83,7 +83,7 @@ public class ChatMessageService {
         return cursor;
     }
 
-    private ChatRoom getChatRoom(Long chatRoomId) {
+    public ChatRoom getChatRoom(Long chatRoomId) {
         return chatRoomRepository.findByIdWithCustomer(chatRoomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
     }
