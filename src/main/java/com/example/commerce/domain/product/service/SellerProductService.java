@@ -85,7 +85,7 @@ public class SellerProductService {
             return;
         }
         if (!product.isOwnedBy(authUser.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
         }
     }
 }
