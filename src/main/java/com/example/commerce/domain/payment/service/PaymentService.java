@@ -61,9 +61,10 @@ public class PaymentService {
 
     /** 결제 승인·쿠폰 사용·주문 확정을 한 트랜잭션으로 묶어 일부 상태만 남지 않게 한다. */
     @Transactional
-    public PaymentResponse approvePayment(Long paymentId) {
+    public PaymentResponse approvePayment(Long userId, Long paymentId) {
         // 주문을 먼저 잠가 취소 완료 후 들어온 승인을 대기 상태 검사에서 거부한다.
         Order order = getPaymentOrderForUpdate(paymentId);
+        validateOwner(order, userId);
         validatePendingOrder(order);
         Payment payment = getPaymentForUpdate(paymentId);
 
@@ -80,10 +81,11 @@ public class PaymentService {
         return PaymentResponse.from(payment);
     }
 
-    /** 결제 실패만 기록한다. 대기 주문과 쿠폰 예약은 주문 취소 시 별도로 정리한다. */
+    /** 결제 실패만 기록한다. 대기 주문과 쿠폰 예약은 주문 취소 시 별도로 정리한다.*/
     @Transactional
-    public PaymentResponse failPayment(Long paymentId, String failReason) {
+    public PaymentResponse failPayment(Long userId, Long paymentId, String failReason) {
         Order order = getPaymentOrderForUpdate(paymentId);
+        validateOwner(order, userId);
         validatePendingOrder(order);
         Payment payment = getPaymentForUpdate(paymentId);
         payment.fail(failReason);
@@ -93,8 +95,16 @@ public class PaymentService {
     }
 
     // 상태를 변경하지 않는 상세 조회는 클래스의 읽기 전용 트랜잭션을 사용한다.
-    public PaymentResponse getPaymentDetail(Long paymentId) {
-        return PaymentResponse.from(getPayment(paymentId));
+    public PaymentResponse getPaymentDetail(Long userId, Long paymentId) {
+        Payment payment = getPayment(paymentId);
+        validateOwner(payment.getOrder(), userId);
+        return PaymentResponse.from(payment);
+    }
+
+    private void validateOwner(Order order, Long userId) {
+        if (userId == null || !userId.equals(order.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
+        }
     }
 
     // 조회에만 사용한다. 승인·실패에는 잠금 조회 메서드를 사용해야 한다.
