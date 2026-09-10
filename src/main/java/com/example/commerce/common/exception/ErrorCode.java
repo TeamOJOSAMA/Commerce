@@ -28,9 +28,21 @@ public enum ErrorCode {
     INVALID_PRODUCT_STATUS(HttpStatus.NOT_ACCEPTABLE, "PRODUCT_003","유호하지 않은 상태입니다"),
     NOT_SUFFICIENT_AMOUNT(HttpStatus.BAD_REQUEST,"PRODUCT_4","최소 가격은 0 이상이여야 합니다"),
     PRICE_ERROR(HttpStatus.BAD_REQUEST,"PRODUCT_5","최소 가격이 최대 가격보다 클수 없습니다"),
+    STOCK_AMOUNT_OVERFLOW(HttpStatus.BAD_REQUEST, "PRODUCT_006", "재고 수량이 허용 범위를 초과했습니다."),
+    INVALID_EVENT_STOCK(HttpStatus.BAD_REQUEST, "PRODUCT_007", "이벤트 재고가 설정되지 않았습니다."),
 
     // 장바구니
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_001","장바구니 상품을 찾을 수 없습니다."),
+    CART_EMPTY(HttpStatus.NOT_FOUND, "CART_002", "장바구니가 비어있습니다."),
+
+    // 쿠폰
+    USER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPON_001", "사용자의 발급 쿠폰을 찾을 수 없습니다."),
+    USER_COUPON_UNAVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_002", "사용 가능한 상태의 쿠폰이 아닙니다."),
+    USER_COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "COUPON_003", "사용 기간이 만료된 쿠폰입니다."),
+    COUPON_INACTIVE(HttpStatus.BAD_REQUEST, "COUPON_004", "활성 상태의 쿠폰이 아닙니다."),
+    COUPON_MINIMUM_AMOUNT_NOT_MET(HttpStatus.BAD_REQUEST, "COUPON_005", "쿠폰 적용 대상 금액이 최소 주문 금액보다 적습니다."),
+    INVALID_COUPON_POLICY(HttpStatus.BAD_REQUEST, "COUPON_006", "쿠폰 할인 정책이 올바르지 않습니다."),
+    INVALID_COUPON_ELIGIBLE_AMOUNT(HttpStatus.BAD_REQUEST, "COUPON_007", "쿠폰 적용 대상 금액은 0 이상이어야 합니다."),
 
     // 주문
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001","주문을 찾을 수 없습니다."),
@@ -47,6 +59,9 @@ public enum ErrorCode {
     INVALID_ORDER_ITEM_PRICE(HttpStatus.BAD_REQUEST, "ORDER_012", "상품 단가는 0 이상이어야 합니다."),
     INVALID_ORDER_ITEM_QUANTITY(HttpStatus.BAD_REQUEST, "ORDER_013", "상품 수량은 1 이상이어야 합니다."),
     ORDER_REQUIRED(HttpStatus.BAD_REQUEST, "ORDER_014", "주문은 필수입니다."),
+    INVALID_ORDER_CART_ITEM_IDS(HttpStatus.BAD_REQUEST, "ORDER_015", "장바구니 항목 ID는 양수여야 합니다."),
+    DUPLICATE_ORDER_CART_ITEM(HttpStatus.BAD_REQUEST, "ORDER_016", "장바구니 항목을 중복 선택할 수 없습니다."),
+    ORDER_ITEM_UNAVAILABLE(HttpStatus.BAD_REQUEST, "ORDER_017", "구매할 수 없는 주문 항목이 있습니다."),
 
     // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001","결제 정보를 찾을 수 없습니다."),
