@@ -27,6 +27,9 @@ public enum ErrorCode {
     NOT_SUFFICIENT_AMOUNT(HttpStatus.BAD_REQUEST,"PRODUCT_4","최소 가격은 0 이상이여야 합니다"),
     PRICE_ERROR(HttpStatus.BAD_REQUEST,"PRODUCT_5","최소 가격이 최대 가격보다 클수 없습니다"),
 
+    // 이벤트
+    INVALID_EVENT_PRICE(HttpStatus.BAD_REQUEST,"EVENT_001", "이벤트중인 상품가격이 필요합니다"),
+    EVENT_INFO_REQUIRED(HttpStatus.BAD_REQUEST,"EVENT_002", "이벤트 세부 내용이 없습니다"),
     // 장바구니
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_001","장바구니 상품을 찾을 수 없습니다."),
 
