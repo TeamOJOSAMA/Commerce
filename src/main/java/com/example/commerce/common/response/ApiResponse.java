@@ -28,8 +28,8 @@ public class ApiResponse<T> {
         return new ApiResponse<>(SUCCESS_CODE, message, data);
     }
 
-    public static ApiResponse<Void> ok() {
-        return new ApiResponse<>(SUCCESS_CODE, null, null);
+    public static ApiResponse<Void> ok(String message) {
+        return new ApiResponse<>(SUCCESS_CODE, message, null);
     }
 
     // ApiResponse - error() 정적 팩토리 (data 필드는 @JsonInclude(NON_NULL)로 응답 시 자동 제외)
