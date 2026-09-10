@@ -75,6 +75,12 @@ public class Order extends BaseEntity {
         this.orderItems.add(orderItem);
     }
 
+    // 외부에서 항목을 추가·삭제해 저장된 주문 금액과 항목 구성이 어긋나는 것을 막는다.
+    // JPA가 관리하는 내부 목록은 유지하며 항목 객체 자체를 복제하는 것은 아니다.
+    public List<OrderItem> getOrderItems() {
+        return List.copyOf(orderItems);
+    }
+
     public long getTotalQuantity() {
         return orderItems.stream()
                 .mapToLong(OrderItem::getQuantity)
