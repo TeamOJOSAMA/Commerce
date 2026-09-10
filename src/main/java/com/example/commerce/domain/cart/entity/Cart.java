@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -37,5 +38,12 @@ public class Cart extends BaseEntity {
 
     public Cart(User user) {
         this.user = user;
+        this.cartItems = new ArrayList<>();
+    }
+
+    // Cart: 상품을 추가하고 CartItem의 장바구니도 함께 설정해 양방향 연관관계를 동기화
+    public void addCartItem(CartItem cartItem) {
+        cartItems.add(cartItem);
+        cartItem.assignCart(this);
     }
 }
