@@ -10,6 +10,7 @@ import com.example.commerce.domain.user.entity.User;
 import com.example.commerce.domain.user.entity.UserRole;
 import com.example.commerce.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +36,15 @@ public class AuthService {
                 UserRole.USER
         );
 
-        userRepository.save(user);
+        // 이메일 중복 검사 시 저장까지의 시간차가 있다.
+        // 이 시간차로 인해 동시성 문제가 발생 할 수 있으니 방지하기
+        // 흐름: 평소에는 existsByEmail이 DUPLICATE_EMAIL을 던지고
+        //      드물게 요청이 동시에 체크를 통과하면 DataIntegrityViolationException이 잡아서 던진다.
+        try {
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
     }
 
     public LoginResponse login(LoginRequest request) {
