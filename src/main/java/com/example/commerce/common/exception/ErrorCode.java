@@ -31,6 +31,9 @@ public enum ErrorCode {
     STOCK_AMOUNT_OVERFLOW(HttpStatus.BAD_REQUEST, "PRODUCT_006", "재고 수량이 허용 범위를 초과했습니다."),
     INVALID_EVENT_STOCK(HttpStatus.BAD_REQUEST, "PRODUCT_007", "이벤트 재고가 설정되지 않았습니다."),
 
+    // 이벤트
+    INVALID_EVENT_PRICE(HttpStatus.BAD_REQUEST,"EVENT_001", "이벤트중인 상품가격이 필요합니다"),
+    EVENT_INFO_REQUIRED(HttpStatus.BAD_REQUEST,"EVENT_002", "이벤트 세부 내용이 없습니다"),
     // 장바구니
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_001","장바구니 상품을 찾을 수 없습니다."),
     CART_EMPTY(HttpStatus.NOT_FOUND, "CART_002", "장바구니가 비어있습니다."),

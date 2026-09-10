@@ -2,7 +2,7 @@ package com.example.commerce.domain.product.repository;
 
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
-import com.example.commerce.domain.product.entity.ProductStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
