@@ -31,6 +31,7 @@
     <h4>3. 연결</h4>
     방 번호: <input type="text" id="roomIdInput" value="1">
     <button onclick="connect()">연결</button>
+    <button onclick="disconnect()">강제 끊기</button>
 </section>
 
 <section>
@@ -43,9 +44,16 @@
 
 <script>
     const BASE_URL = "http://localhost:8080/api";
+    const RECONNECT_DELAY_MS = 3000;
+    const RECOVER_SIZE = 50;
 
     let stompClient = null;
     let roomId = null;
+    let token = null;
+
+    // 재연결 시 누락 메시지를 복구하기 위한 기준점
+    let lastMessageId = null;
+    let isManualDisconnect = false;
 
     async function login() {
         const response = await fetch(BASE_URL + "/auth/login", {
@@ -60,7 +68,7 @@
         const result = await response.json();
         console.log("로그인 응답:", result);
 
-        const token = result.data?.accessToken ?? result.data?.token ?? result.data;
+        token = result.data?.accessToken ?? result.data?.token ?? result.data;
         document.getElementById("tokenInput").value = token;
 
         appendMessage("로그인 완료");
@@ -68,28 +76,81 @@
 
     function connect() {
         roomId = document.getElementById("roomIdInput").value;
-        const token = document.getElementById("tokenInput").value;
+        token = document.getElementById("tokenInput").value;
+        isManualDisconnect = false;
 
+        openSocket();
+    }
+
+    function openSocket() {
         const socket = new SockJS(BASE_URL + "/ws-stomp");
         stompClient = Stomp.over(socket);
+        stompClient.debug = null;
 
-        // CONNECT 프레임 헤더로 토큰을 전달한다
         stompClient.connect({ Authorization: token }, () => {
             appendMessage(roomId + "번 방 연결됨");
+            subscribeAll();
+            recoverMissedMessages();
+        }, () => {
+            // 연결이 끊기거나 실패하면 자동으로 재연결을 시도한다
+            if (isManualDisconnect) {
+                return;
+            }
 
-            stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
-                const body = JSON.parse(message.body);
-                appendMessage("[" + body.senderName + "] " + body.content);
-            });
-
-            // 해당 방의 에러
-            stompClient.subscribe("/sub/chat-rooms/" + roomId + "/errors", (message) => {
-                const error = JSON.parse(message.body);
-                appendMessage("에러: [" + error.code + "] " + error.message);
-            });
-        }, (error) => {
-            appendMessage("연결 실패: " + error);
+            appendMessage("연결이 끊겼습니다. " + (RECONNECT_DELAY_MS / 1000) + "초 후 재연결합니다.");
+            setTimeout(openSocket, RECONNECT_DELAY_MS);
         });
+    }
+
+    function subscribeAll() {
+        stompClient.subscribe("/sub/chat-rooms/" + roomId, (message) => {
+            const body = JSON.parse(message.body);
+            lastMessageId = body.chatMessageId;
+            appendMessage("[" + body.senderName + "] " + body.content);
+        });
+
+        stompClient.subscribe("/sub/chat-rooms/" + roomId + "/errors", (message) => {
+            const error = JSON.parse(message.body);
+            appendMessage("에러: [" + error.code + "] " + error.message);
+        });
+
+        stompClient.subscribe("/sub/chat-rooms/" + roomId + "/status", (message) => {
+            appendMessage("상태 변경: " + message.body);
+        });
+    }
+
+    // 끊긴 동안 받지 못한 메시지를 lastMessageId 기준으로 다시 조회한다
+    async function recoverMissedMessages() {
+        if (lastMessageId === null) {
+            return;
+        }
+
+        const url = BASE_URL + "/v1/chat-rooms/" + roomId + "/messages"
+            + "?cursor=" + lastMessageId
+            + "&size=" + RECOVER_SIZE
+            + "&direction=AFTER";
+
+        const response = await fetch(url, { headers: { "Authorization": token } });
+        const result = await response.json();
+        const messages = result.data?.messages ?? [];
+
+        if (messages.length === 0) {
+            appendMessage("복구할 메시지 없음");
+
+            return;
+        }
+
+        messages.forEach((message) => {
+            lastMessageId = message.chatMessageId;
+            appendMessage("(복구) [" + message.senderName + "] " + message.content);
+        });
+    }
+
+    function disconnect() {
+        isManualDisconnect = false;
+        // STOMP 의 disconnect 는 onclose 핸들러를 우회하므로 소켓을 직접 닫는다
+        stompClient.ws.close();
+        appendMessage("강제로 연결을 끊었습니다.");
     }
 
     function sendMessage() {
