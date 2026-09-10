@@ -3,7 +3,6 @@ package com.example.commerce.domain.product.service;
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.auth.entity.AuthUser;
-import com.example.commerce.domain.event.entity.Event;
 import com.example.commerce.domain.event.service.EventService;
 import com.example.commerce.domain.product.dto.CreateProductRequest;
 import com.example.commerce.domain.product.dto.CreateProductResponse;
@@ -69,15 +68,13 @@ public class SellerProductService {
         }
     }
 
-    // Product는 "이벤트 시작해줘"라고 요청만 함, 실제 Event 생성은 EventService 책임
     private void applyEvent(Product product, EventInfoRequest eventInfo) {
         if (eventInfo == null) {
             throw new BusinessException(ErrorCode.EVENT_INFO_REQUIRED);
         }
 
-        Event event = eventService.startEvent(product.getId(), product.getStock(), eventInfo);
-
-        product.event(eventInfo.eventPrice(), eventInfo.discountRate(), event.getId());
+        eventService.startEvent(product, eventInfo);
+        product.event();
     }
 
     private void validateOwnership(AuthUser authUser, Product product) {
@@ -85,7 +82,7 @@ public class SellerProductService {
             return;
         }
         if (!product.isOwnedBy(authUser.getId())) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
         }
     }
 }
