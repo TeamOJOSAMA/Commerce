@@ -11,9 +11,7 @@ public record UpdateProductResponse(
         ProductCategory category,
         Long price,
         int stock,
-        ProductStatus status,
-        Long eventPrice,
-        Integer discountRate
+        ProductStatus status
 ) {
     public static UpdateProductResponse from(Product product) {
         return new UpdateProductResponse(
@@ -23,9 +21,7 @@ public record UpdateProductResponse(
                 product.getCategory(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus(),
-                product.getEventPrice(),
-                product.getDiscountRate()
+                product.getStatus()
         );
     }
 }
