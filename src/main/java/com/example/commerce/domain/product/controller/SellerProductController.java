@@ -7,6 +7,7 @@ import com.example.commerce.domain.product.dto.CreateProductResponse;
 import com.example.commerce.domain.product.dto.UpdateProductRequest;
 import com.example.commerce.domain.product.dto.UpdateProductResponse;
 import com.example.commerce.domain.product.service.SellerProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class SellerProductController {
     @PostMapping
     public ResponseEntity<ApiResponse<CreateProductResponse>> createProduct(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody CreateProductRequest request
+            @Valid @RequestBody CreateProductRequest request
     ) {
         CreateProductResponse response = sellerProductService.createProduct(authUser, request);
 
@@ -39,7 +40,7 @@ public class SellerProductController {
     public ResponseEntity<ApiResponse<UpdateProductResponse>> updateProduct(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long productId,
-            @RequestBody UpdateProductRequest request
+            @Valid @RequestBody UpdateProductRequest request
     ) {
         UpdateProductResponse response = sellerProductService.updateProduct(authUser, productId, request);
 
