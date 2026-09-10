@@ -165,10 +165,10 @@ public class OrderFacade {
         return OrderResponse.from(order, payment);
     }
 
-    /** 미결제 주문을 취소하고 READY 결제를 실패 처리하며 쿠폰 예약을 해제한다. */
+    /** 미결제 주문의 재고 복구, 결제 실패 처리, 쿠폰 예약 해제를 함께 커밋한다. */
     @Transactional
     public void cancelOrder(Long userId, Long orderId) {
-        // 승인 경로와 같은 주문 → 결제 → 쿠폰 순서를 지켜 서로의 상태 변경을 기다리게 한다.
+        // 주문 → 결제 → 상품(ID 오름차순) → 쿠폰 순서로 잠근다.
         Order order = orderService.getOwnedOrderForUpdate(userId, orderId);
         if (order.getStatus() == OrderStatus.CANCELLED) {
             // 최초 취소 시각을 유지하고 재사용된 쿠폰의 예약까지 다시 해제하지 않도록 즉시 반환한다.
@@ -187,6 +187,9 @@ public class OrderFacade {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, "결제된 주문은 취소할 수 없습니다.");
         }
 
+        // 생성과 같이 상품을 쿠폰보다 먼저 잠가 서로 반대 순서로 기다리는 것을 피한다.
+        restoreOrderStock(order);
+
         if (payment != null && payment.getStatus() == PaymentStatus.READY) {
             // 승인 전 사용자 취소는 FAILED로 구분한다. 이미 FAILED인 결제의 원래 사유는 유지한다.
             payment.fail("주문이 취소되었습니다.");
@@ -197,8 +200,34 @@ public class OrderFacade {
             couponService.releaseCoupon(userId, order.getUserCouponId());
         }
 
-        // 현재 재고 복구는 미연결이다. 이벤트 기간 재검증 없이 원래 차감분을 복구하는 연결이 필요하다.
         order.cancel();
+    }
+
+    private void restoreOrderStock(Order order) {
+        List<OrderItem> orderItems = order.getOrderItems();
+        List<Long> productIds = orderItems.stream()
+                .map(OrderItem::getProductId)
+                .distinct()
+                .sorted()
+                .toList();
+
+        Map<Long, Product> lockedProducts = productRepository.findAllByIdsForUpdate(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+        // 하나라도 삭제되었으면 일부 재고만 복구한 취소가 남지 않도록 전체 취소를 거부한다.
+        if (lockedProducts.size() != productIds.size()) {
+            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 일반·이벤트 상품 모두 공통 재고를 사용한다. 현재 이벤트나 장바구니는 다시 조회하지 않는다.
+        for (OrderItem orderItem : orderItems) {
+            Product product = lockedProducts.get(orderItem.getProductId());
+            // 상품 재고는 int이므로 복구 결과가 음수로 넘치기 전에 취소를 거부한다.
+            if ((long) product.getStock() + orderItem.getQuantity() > Integer.MAX_VALUE) {
+                throw new BusinessException(ErrorCode.STOCK_AMOUNT_OVERFLOW);
+            }
+            product.restoreStock(orderItem.getQuantity());
+        }
     }
 
     /** 이벤트 상품만 일괄 조회하고 상품당 적용 가능한 이벤트가 하나인지 확인한다. */
@@ -254,6 +283,12 @@ public class OrderFacade {
 
     /** 전체/선택 장바구니 조회를 통일하고 항목 누락과 빈 장바구니를 거부한다. */
     private List<CartItem> getValidatedCartItems(Long userId, List<Long> cartItemIds) {
+        if (cartItemIds.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new BusinessException(ErrorCode.INVALID_ORDER_CART_ITEM_IDS);
+        }
+        if (cartItemIds.stream().distinct().count() != cartItemIds.size()) {
+            throw new BusinessException(ErrorCode.DUPLICATE_ORDER_CART_ITEM);
+        }
 
         // 상품은 LAZY로 유지해 아래 상품 잠금 조회 전에 로딩하지 않는다.
         List<CartItem> cartItems = cartItemIds.isEmpty()
