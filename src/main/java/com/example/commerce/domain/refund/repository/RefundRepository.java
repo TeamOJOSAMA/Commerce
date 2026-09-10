@@ -1,4 +1,8 @@
 package com.example.commerce.domain.refund.repository;
 
-public class RefundRepository {
+import com.example.commerce.domain.refund.entity.Refund;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface RefundRepository extends JpaRepository<Refund, Long> {
+    boolean existsByPaymentId(Long paymentId);
 }
