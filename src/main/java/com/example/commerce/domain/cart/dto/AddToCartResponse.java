@@ -9,7 +9,7 @@ public record AddToCartResponse(Long cartItemId, Long productId, Integer quantit
     public static AddToCartResponse from(CartItem cartItem) {
         return new AddToCartResponse(
                 cartItem.getId(),
-                cartItem.getProductId(),
+                cartItem.getProduct().getId(),
                 cartItem.getQuantity(),
                 cartItem.getCart().getCreatedAt()
         );

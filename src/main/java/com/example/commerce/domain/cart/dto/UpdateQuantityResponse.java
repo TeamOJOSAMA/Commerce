@@ -9,7 +9,7 @@ public record UpdateQuantityResponse(Long cartItemId, Long productId, Integer qu
     public static UpdateQuantityResponse from(CartItem cartItem) {
         return new UpdateQuantityResponse(
                 cartItem.getId(),
-                cartItem.getProductId(),
+                cartItem.getProduct().getId(),
                 cartItem.getQuantity(),
                 cartItem.getUpdatedAt()
         );
