@@ -1,15 +1,23 @@
 package com.example.commerce.domain.cart.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.domain.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Column;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "carts")
@@ -21,11 +29,20 @@ public class Cart extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO: 회원 도메인 연동 후 User 외래키로 바꿀 예정
-    @Column(name = "user_id", nullable = false, unique = true)
-    private Long userId;
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    public Cart(Long userId) {
-        this.userId = userId;
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CartItem> cartItems = new ArrayList<>();
+
+    public Cart(User user) {
+        this.user = user;
+    }
+
+    // Cart: 상품을 추가하고 CartItem의 장바구니도 함께 설정해 양방향 연관관계를 동기화
+    public void addCartItem(CartItem cartItem) {
+        cartItems.add(cartItem);
+        cartItem.assignCart(this);
     }
 }
