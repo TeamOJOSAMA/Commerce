@@ -11,8 +11,9 @@ public record ProductResponse(
         ProductCategory category,
         Long price,
         int stock,
-        ProductStatus status
-
+        ProductStatus status,
+        Long eventPrice,
+        Integer discountRate
 ) {
     public static ProductResponse from(Product product) {
         return new ProductResponse(
@@ -22,7 +23,9 @@ public record ProductResponse(
                 product.getCategory(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus()
+                product.getStatus(),
+                product.getEventPrice(),
+                product.getDiscountRate()
         );
     }
 }
