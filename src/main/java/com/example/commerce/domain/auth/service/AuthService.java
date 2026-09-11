@@ -29,7 +29,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        User user = new User(
+        User user = User.of(
                 request.name(),
                 request.email(),
                 passwordEncoder.encode(request.password()),
@@ -57,6 +57,6 @@ public class AuthService {
 
         String token = jwtProvider.createToken(user.getId(), user.getEmail(), user.getRole());
 
-        return new LoginResponse(token);
+        return LoginResponse.from(token);
     }
 }

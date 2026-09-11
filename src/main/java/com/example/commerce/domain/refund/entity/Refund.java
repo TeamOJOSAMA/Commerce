@@ -14,7 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "refunds")
+@Table(name = "refunds", uniqueConstraints = @UniqueConstraint(
+        name = "uk_refund_payment_id", columnNames = "payment_id")) // 한 결제당 환불 1건 DB 강제
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Refund  extends BaseEntity {
@@ -47,7 +48,7 @@ public class Refund  extends BaseEntity {
         if (!payment.isPaid()) {
             throw new BusinessException(ErrorCode.REFUND_NOT_ALLOWED);
         }
-        if (refundItems == null == refundItems.isEmpty()) {
+        if (refundItems == null || refundItems.isEmpty()) {
             throw new BusinessException(ErrorCode.REFUND_ITEM_NOT_FOUND);
         }
 

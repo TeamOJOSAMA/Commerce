@@ -47,7 +47,8 @@ public class UserService {
         user.changeRole(role);
     }
 
-    private User findUser(Long userId) {
+    // 주문 등 다른 도메인에서 사용자 존재 여부를 확인할 때도 재사용한다.
+    public User findUser(Long userId) {
 
         return userRepository.findById(userId).orElseThrow(
                 () -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
