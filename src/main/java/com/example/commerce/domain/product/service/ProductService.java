@@ -7,6 +7,7 @@ import com.example.commerce.domain.product.dto.SearchProductRequest;
 import com.example.commerce.domain.product.entity.Product;
 import com.example.commerce.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class ProductService {
         return ProductResponse.from(product);
     }
 
+    @Cacheable(value = "popularProducts", key = "#pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<ProductResponse> getPopularProducts(Pageable pageable) {
         return productRepository
                 .findAllByOrderByViewCountDesc(pageable)
