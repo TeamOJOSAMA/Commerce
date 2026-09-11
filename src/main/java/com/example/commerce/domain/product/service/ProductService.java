@@ -54,4 +54,9 @@ public class ProductService {
             throw new BusinessException(ErrorCode.PRICE_ERROR);
         }
     }
+
+    public Product findProduct(Long productId) {
+        return productRepository.findById(productId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+    }
 }
