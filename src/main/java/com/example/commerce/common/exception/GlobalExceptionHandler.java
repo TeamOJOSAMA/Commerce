@@ -7,6 +7,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -74,13 +75,14 @@ public class GlobalExceptionHandler {
                 .body(ApiErrorResponse.of(ErrorCode.INVALID_INPUT, "요청 본문의 형식이 올바르지 않습니다."));
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(HttpServletRequest request) {
-        log.warn("404 Not Found: {}", request.getRequestURI());
+    // @PreAuthorize 에서 권한이 없을 때 발생한다. 아래 Exception 핸들러가 잡으면 500 이 되므로 별도 처리
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        log.warn("AuthorizationDeniedException: {}", e.getMessage());
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(ApiErrorResponse.of(ErrorCode.RESOURCE_NOT_FOUND));
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiErrorResponse.of(ErrorCode.FORBIDDEN_ACCESS));
     }
 
     @ExceptionHandler(Exception.class)

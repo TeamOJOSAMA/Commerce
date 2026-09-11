@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// context-path 가 /api 이므로 여기에는 붙이지 않는다
+// context-path 를 사용하지 않으므로 경로에 /api 를 포함한다
 @RestController
 @RequestMapping("/api/v1/chat-rooms")
 @RequiredArgsConstructor
@@ -61,6 +62,7 @@ public class ChatRoomController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<AdminChatRoomResponse>>> getAllChatRooms(
             @RequestParam(required = false) InquiryStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -72,6 +74,7 @@ public class ChatRoomController {
     }
 
     @PatchMapping("/{chatRoomId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<InquiryStatusUpdateResponse>> updateStatus(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long chatRoomId,
