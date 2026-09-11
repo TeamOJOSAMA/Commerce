@@ -88,6 +88,16 @@ public class CartService {
         cartItemRepository.delete(cartItem);
     }
 
+    /** 요청한 회원 소유의 장바구니 비우기(삭제) */
+    @Transactional
+    public void deleteCart(Long userId) {
+
+        // 이 회원이 장바구니를 갖고있는지 확인 후 갖고있다면 그 장바구니를 삭제
+        cartRepository.findByUserId(userId)
+                // cascade 타입이 ALL이라 장바구니를 삭제하면 내부 CartItem도 함께 삭제되므로 굳이 orElseThrow를 던지지 않아도 됨
+                .ifPresent(cartRepository::delete);
+    }
+
     private CartItem findCartItem(Long userId, Long cartItemId) {
 
         // 해당 장바구니에 상품이 있고, 그 상품의 소유자가 있는가
