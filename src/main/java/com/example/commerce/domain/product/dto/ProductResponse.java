@@ -4,6 +4,8 @@ import com.example.commerce.domain.product.entity.Product;
 import com.example.commerce.domain.product.entity.ProductCategory;
 import com.example.commerce.domain.product.entity.ProductStatus;
 
+import java.io.Serializable;
+
 public record ProductResponse(
         Long id,
         String name,
@@ -14,7 +16,8 @@ public record ProductResponse(
         ProductStatus status,
         Long eventPrice,
         Integer discountRate
-) {
+
+) implements Serializable {
     public static ProductResponse from(Product product) {
         return new ProductResponse(
                 product.getId(),
