@@ -2,13 +2,18 @@ package com.example.commerce.domain.refund.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.order.entity.Order;
 import com.example.commerce.domain.order.entity.OrderItem;
+import com.example.commerce.domain.order.repository.OrderRepository;
 import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.payment.repository.PaymentRepository;
+import com.example.commerce.domain.product.entity.Product;
+import com.example.commerce.domain.product.repository.ProductRepository;
 import com.example.commerce.domain.refund.dto.RefundRequest;
 import com.example.commerce.domain.refund.dto.RefundResponse;
 import com.example.commerce.domain.refund.entity.Refund;
 import com.example.commerce.domain.refund.entity.RefundItem;
+import com.example.commerce.domain.refund.entity.RefundType;
 import com.example.commerce.domain.refund.repository.RefundRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +21,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -29,6 +35,49 @@ public class RefundService {
 
     private final RefundRepository refundRepository;
     private final PaymentRepository paymentRepository;
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
+
+    @Transactional
+    public RefundResponse completeRefund(Long userId, Long refundId) {
+        Refund refund = refundRepository.findByIdForUpdate(refundId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.REFUND_NOT_FOUND));
+
+        validateOwner(refund.getPayment(), userId);
+
+        refund.complete();
+        refund.getPayment().cancel();
+
+        // 전액 환불이면 주문 전체가 무효 그래서 주문도 취소
+        // 부분 환불은 남은 항목이 유효한 주문으로 남기때문에 주문 상태는 건드리지 않음
+        if (refund.getRefundType() == RefundType.FULL) {
+            cancelOrder(refund.getPayment().getOrder().getId());
+        }
+
+        restoreStock(refund);
+
+        log.info("환불 완료 - refundId: {}, paymentId: {}, type: {}", refundId, refund.getPayment().getId(), refund.getRefundType());
+        return RefundResponse.from(refund);
+    }
+
+    private void cancelOrder(Long orderId) {
+        Order order = orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        order.cancel();
+    }
+
+    private void restoreStock(Refund refund) {
+        Map<Long, Integer> quantityByProductId = refund.getRefundItems().stream()
+                .collect(Collectors.toMap(
+                        refundItem -> refundItem.getOrderItem().getProductId(),
+                        RefundItem::getQuantity,
+                        Integer::sum));
+
+        List<Product> products = productRepository.findAllByIdsForUpdate(
+                new ArrayList<>(quantityByProductId.keySet())
+        );
+        products.forEach(product -> product.restoreStock(quantityByProductId.get(product.getId())));
+    }
 
     @Transactional
     public RefundResponse createRefund(Long userId, RefundRequest refundRequest) {

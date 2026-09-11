@@ -61,7 +61,7 @@ class RefundServiceTest {
         lenient().when(orderItemB.getQuantity()).thenReturn(1);
         lenient().when(orderItemB.getUnitPrice()).thenReturn(3_000L);
 
-lenient().when(paymentRepository.findById(PAYMENT_ID)).thenReturn(Optional.of(payment));
+lenient().when(paymentRepository.findByIdForUpdate(PAYMENT_ID)).thenReturn(Optional.of(payment));
 lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false);
         lenient().when(refundRepository.saveAndFlush(any(Refund.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -110,7 +110,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     @Test
     @DisplayName("존재하지 않는 결제 - PAYMENT_NOT_FOUND")
     void createRefund_paymentNotFound() {
-        given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
+        given(paymentRepository.findByIdForUpdate(PAYMENT_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
                 .isInstanceOf(BusinessException.class)
