@@ -27,7 +27,7 @@ public class SellerProductService {
     @Transactional
     public CreateProductResponse createProduct(AuthUser authUser, CreateProductRequest request) {
         Product product = new Product(
-                authUser.getId(),
+                authUser.getUserId(),
                 request.name(),
                 request.description(),
                 request.category(),
@@ -81,7 +81,7 @@ public class SellerProductService {
         if (authUser.getRole() == UserRole.ADMIN) {
             return;
         }
-        if (!product.isOwnedBy(authUser.getId())) {
+        if (!product.isOwnedBy(authUser.getUserId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
         }
     }
