@@ -4,6 +4,7 @@ import com.example.commerce.common.filter.JwtAuthFilter;
 import com.example.commerce.common.jwt.JwtProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,7 +37,8 @@ public class SecurityConfig {
                         // 정적 테스트 페이지 (개발용, 배포 전 제거)
                         .requestMatchers("/*.html").permitAll()
                         // WebSocket 핸드셰이크. 인증은 STOMP CONNECT 시점에 ChannelInterceptor 에서 처리
-                        .requestMatchers("/ws-stomp/**", "/ws-echo/**").permitAll()
+                        .requestMatchers("/api/ws-stomp/**", "/api/ws-echo/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
                         .anyRequest().authenticated())

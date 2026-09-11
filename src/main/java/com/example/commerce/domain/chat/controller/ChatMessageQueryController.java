@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/chat-rooms/{chatRoomId}/messages")
+@RequestMapping("/api/v1/chat-rooms/{chatRoomId}/messages")
 @RequiredArgsConstructor
 public class ChatMessageQueryController {
 

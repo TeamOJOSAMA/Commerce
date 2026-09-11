@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 // context-path 가 /api 이므로 여기에는 붙이지 않는다
 @RestController
-@RequestMapping("/v1/chat-rooms")
+@RequestMapping("/api/v1/chat-rooms")
 @RequiredArgsConstructor
 public class ChatRoomController {
 

@@ -13,6 +13,7 @@ import com.example.commerce.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +25,12 @@ import java.util.List;
 public class ChatMessageService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    private static final String SUBSCRIBE_DESTINATION = "/sub/chat-rooms/";
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public ChatMessageResponse sendMessage(Long chatRoomId, Long senderId, String content) {
@@ -41,6 +44,33 @@ public class ChatMessageService {
                 chatMessageRepository.save(ChatMessage.ofTalk(chatRoom, sender, content));
 
         return ChatMessageResponse.from(chatMessage);
+    }
+
+    @Transactional
+    public void sendEnterMessage(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = getChatRoom(chatRoomId);
+        User user = getUser(userId);
+
+        ChatMessage chatMessage =
+                chatMessageRepository.save(ChatMessage.ofEnter(chatRoom, user));
+
+        broadcast(chatRoomId, chatMessage);
+    }
+
+    @Transactional
+    public void sendLeaveMessage(Long chatRoomId, Long userId) {
+        ChatRoom chatRoom = getChatRoom(chatRoomId);
+        User user = getUser(userId);
+
+        ChatMessage chatMessage =
+                chatMessageRepository.save(ChatMessage.ofLeave(chatRoom, user));
+
+        broadcast(chatRoomId, chatMessage);
+    }
+
+    public ChatRoom getChatRoom(Long chatRoomId) {
+        return chatRoomRepository.findByIdWithCustomer(chatRoomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
     }
 
     public ChatMessageSliceResponse getMessages(Long chatRoomId,
@@ -68,6 +98,11 @@ public class ChatMessageService {
         return ChatMessageSliceResponse.of(messages, hasNext);
     }
 
+    private void broadcast(Long chatRoomId, ChatMessage chatMessage) {
+        messagingTemplate.convertAndSend(
+                SUBSCRIBE_DESTINATION + chatRoomId, ChatMessageResponse.from(chatMessage));
+    }
+
     private void validateSize(int size) {
         if (size < 1 || size > MAX_PAGE_SIZE) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
@@ -81,11 +116,6 @@ public class ChatMessageService {
         }
 
         return cursor;
-    }
-
-    public ChatRoom getChatRoom(Long chatRoomId) {
-        return chatRoomRepository.findByIdWithCustomer(chatRoomId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CHAT_ROOM_NOT_FOUND));
     }
 
     private User getUser(Long userId) {
