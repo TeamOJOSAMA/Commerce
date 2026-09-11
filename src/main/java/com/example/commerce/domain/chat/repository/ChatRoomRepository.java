@@ -41,4 +41,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             WHERE r.id = :chatRoomId
             """)
     Optional<ChatRoom> findByIdWithCustomer(@Param("chatRoomId") Long chatRoomId);
-}
+
+    // 구독 권한 검증용. 고객 본인이거나 관리자면 접근 가능
+    @Query("""
+            SELECT COUNT(r) > 0 FROM ChatRoom r
+            WHERE r.id = :chatRoomId
+              AND (:isAdmin = true OR r.customer.id = :userId)
+            """)
+    boolean existsAccessibleBy(@Param("chatRoomId") Long chatRoomId,
+                               @Param("userId") Long userId,
+                               @Param("isAdmin") boolean isAdmin);}
