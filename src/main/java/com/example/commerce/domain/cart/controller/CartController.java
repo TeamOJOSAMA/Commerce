@@ -5,13 +5,17 @@ import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.cart.dto.AddToCartRequest;
 import com.example.commerce.domain.cart.dto.AddToCartResponse;
 import com.example.commerce.domain.cart.dto.GetCartResponse;
+import com.example.commerce.domain.cart.dto.UpdateQuantityRequest;
+import com.example.commerce.domain.cart.dto.UpdateQuantityResponse;
 import com.example.commerce.domain.cart.facade.CartFacade;
+import com.example.commerce.domain.cart.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,19 +28,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class CartController {
 
     private final CartFacade cartFacade;
+    private final CartService cartService;
 
     @PostMapping("/{productId}")
     public ResponseEntity<ApiResponse<AddToCartResponse>> createCart(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long productId,
-            @Valid @RequestBody AddToCartRequest request) {
-
+            @Valid @RequestBody AddToCartRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(cartFacade.addCartItem(authUser.getUserId(), productId, request)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<GetCartResponse>> getCart(@AuthenticationPrincipal AuthUser authUser) {
-        return ResponseEntity.ok(ApiResponse.ok(cartFacade.getCart(authUser.getUserId())));
+        return ResponseEntity.ok(ApiResponse.ok(cartService.getCart(authUser.getUserId())));
+    }
+
+    @PatchMapping("/{cartItemId}")
+    public ResponseEntity<ApiResponse<UpdateQuantityResponse>> updateQuantity(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long cartItemId,
+            @Valid @RequestBody UpdateQuantityRequest request
+    ) {
+        return ResponseEntity
+                .ok(ApiResponse.ok(cartService.updateQuantity(authUser.getUserId(), cartItemId, request)));
     }
 }

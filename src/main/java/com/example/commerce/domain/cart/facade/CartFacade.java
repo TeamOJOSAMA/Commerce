@@ -2,7 +2,6 @@ package com.example.commerce.domain.cart.facade;
 
 import com.example.commerce.domain.cart.dto.AddToCartRequest;
 import com.example.commerce.domain.cart.dto.AddToCartResponse;
-import com.example.commerce.domain.cart.dto.GetCartResponse;
 import com.example.commerce.domain.cart.entity.CartItem;
 import com.example.commerce.domain.cart.service.CartService;
 import com.example.commerce.domain.product.entity.Product;
@@ -23,7 +22,7 @@ public class CartFacade {
     private final UserService userService;
     private final CartService cartService;
 
-    // 상품 담기
+    /** 상품 담기 */
     @Transactional
     public AddToCartResponse addCartItem(Long userId, Long productId, AddToCartRequest request) {
 
@@ -37,15 +36,5 @@ public class CartFacade {
         CartItem cartItem = cartService.addCartItem(user, product, request.quantity());
 
         return AddToCartResponse.from(cartItem);
-    }
-
-    // 장바구니 조회
-    public GetCartResponse getCart(Long userId) {
-
-        // 요청 userId에 해당하는 회원이 UserRepository에 있는가
-        User user = userService.findUser(userId); // 없다면 404
-
-        // 비즈니스 로직 진행
-        return cartService.getCart(user);
     }
 }
