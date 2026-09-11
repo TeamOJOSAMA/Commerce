@@ -1,6 +1,8 @@
 package com.example.commerce.domain.coupon.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,11 +62,19 @@ public class UserCoupon extends BaseEntity {
         this.expiresAt = issuedAt.plusDays(USER_COUPON_VALIDITY_DAYS);
     }
 
-    public void reservedUserCoupon() {
+    // 주문 대기 중 점유만 표시한다. 실제 사용 시각은 결제가 승인될 때 기록한다.
+    public void reserve() {
+        if (status != UserCouponStatus.AVAILABLE) {
+            throw new BusinessException(ErrorCode.USER_COUPON_UNAVAILABLE);
+        }
         this.status = UserCouponStatus.RESERVED;
     }
 
-    public void usedUserCoupon() {
+    // 예약된 쿠폰만 결제 승인으로 사용 확정할 수 있다.
+    public void use() {
+        if (status != UserCouponStatus.RESERVED) {
+            throw new BusinessException(ErrorCode.USER_COUPON_UNAVAILABLE);
+        }
         this.status = UserCouponStatus.USED;
         this.usedAt = LocalDateTime.now();
     }
@@ -73,7 +83,13 @@ public class UserCoupon extends BaseEntity {
         this.status = UserCouponStatus.EXPIRED;
     }
 
-    public void availableUserCoupon() {
-        this.status = UserCouponStatus.AVAILABLE;
+    // 대기 주문 취소에 사용하는 예약 해제이며, USED 쿠폰의 환불 복구와는 구분한다.
+    public void release(LocalDateTime now) {
+        // 주문의 상태 검사와 재취소 방지는 호출 서비스가 담당한다.
+        if (status != UserCouponStatus.RESERVED) {
+            return;
+        }
+        // 예약 중 만료 시각이 지났으면 해제하더라도 다시 사용할 수 없게 한다.
+        this.status = now.isBefore(expiresAt) ? UserCouponStatus.AVAILABLE : UserCouponStatus.EXPIRED;
     }
 }

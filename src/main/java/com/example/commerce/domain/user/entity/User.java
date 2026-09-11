@@ -1,6 +1,7 @@
 package com.example.commerce.domain.user.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -24,17 +25,23 @@ public class User extends BaseEntity {
     private String email;
 
     @Column(nullable = false, length = 255)
+    @JsonIgnore // 실수로 엔티티를 직접 리턴하면 노출됨, 최소한의 안전장치
     private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
 
-    public User(String name, String email, String password, UserRole role) {
+    private User(String name, String email, String password, UserRole role) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
+    }
+
+    public static User of(String name, String email, String password, UserRole role) {
+
+        return new User(name, email, password, role);
     }
 
     public void changeRole(UserRole role) {

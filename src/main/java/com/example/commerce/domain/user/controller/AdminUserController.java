@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admin/users")
+@RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
 public class AdminUserController {
 
@@ -25,7 +25,7 @@ public class AdminUserController {
             @RequestParam(required = false) UserRole role,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(userService.getUsers(role, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok("유저 목록 조회에 성공했습니다.", userService.getUsers(role, pageable)));
     }
 
     @PatchMapping("/{userId}/role")
@@ -35,6 +35,6 @@ public class AdminUserController {
     ) {
         userService.updateRole(userId, request.role());
 
-        return ResponseEntity.ok(ApiResponse.ok());
+        return ResponseEntity.ok(ApiResponse.ok("권한 변경에 성공했습니다."));
     }
 }

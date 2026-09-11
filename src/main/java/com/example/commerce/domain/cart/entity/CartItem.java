@@ -1,6 +1,7 @@
 package com.example.commerce.domain.cart.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.domain.product.entity.Product;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -28,20 +29,22 @@ public class CartItem extends BaseEntity {
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    // TODO: 상품 도메인 연동 후 Product 외래키로 바꿀 예정
-//    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-//    @JoinColumn(name = "product_id", nullable = false)
-//    private Product product;
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(nullable = false)
     private Integer quantity; // 장바구니 내 물품의 수량
 
-    public CartItem(Cart cart, Long productId, Integer quantity) {
+    public CartItem(Cart cart, Product product, Integer quantity) {
         this.cart = cart;
-        this.productId = productId;
+        this.product = product;
         this.quantity = quantity;
+    }
+
+    // CartItem: 연관관계의 주인인 CartItem에 장바구니를 설정
+    public void assignCart(Cart cart) {
+        this.cart = cart;
     }
 
     // 수량 변경
