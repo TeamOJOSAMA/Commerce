@@ -4,6 +4,7 @@ import com.example.commerce.domain.event.entity.Event;
 import com.example.commerce.domain.product.entity.Product;
 import com.example.commerce.domain.product.entity.ProductCategory;
 import com.example.commerce.domain.product.entity.ProductStatus;
+import java.io.Serializable;
 
 public record ProductResponse(
         Long id,
@@ -15,7 +16,8 @@ public record ProductResponse(
         ProductStatus status,
         Long eventPrice,
         Integer discountRate
-) {
+
+) implements Serializable {
     public static ProductResponse of(Product product, Event activeEvent) {
         Long eventPrice = (activeEvent != null) ? (long) activeEvent.getEventPrice() : null;
         Integer discountRate = (activeEvent != null) ? activeEvent.getDiscountRate() : null;
