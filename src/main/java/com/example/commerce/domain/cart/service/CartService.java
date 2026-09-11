@@ -2,6 +2,7 @@ package com.example.commerce.domain.cart.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.cart.dto.GetCartResponse;
 import com.example.commerce.domain.product.entity.Product;
 import com.example.commerce.domain.cart.entity.Cart;
 import com.example.commerce.domain.cart.entity.CartItem;
@@ -18,7 +19,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
 
-    // 상품 담기
+    @Transactional
     public CartItem addCartItem(User user, Product product, Integer quantity) {
 
         // 현재 판매중인 상품인가
@@ -40,4 +41,13 @@ public class CartService {
 
         return cartItem;
     }
+
+    public GetCartResponse getCart(User user) {
+
+        // 로그인 회원 ID로 본인의 장바구니를 조회
+        return cartRepository.findCartByUser(user)
+                .map(GetCartResponse::from) // 장바구니가 있다면 (단, 장바구니 내의 내용물은 있든 없든 상관없음)
+                .orElseGet(GetCartResponse::empty); // 장바구니 자체가 없음
+    }
+
 }

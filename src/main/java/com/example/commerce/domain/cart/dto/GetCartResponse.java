@@ -13,6 +13,7 @@ public record GetCartResponse(
         LocalDateTime updatedAt
 ) {
 
+    // 장바구니 내용물 조회
     public static GetCartResponse from(Cart cart) {
 
         List<Items> items = cart.getCartItems().stream()
@@ -35,6 +36,11 @@ public record GetCartResponse(
                 .sum();
 
         return new GetCartResponse(cart.getId(), items, totalPrice, cart.getCreatedAt(), cart.getUpdatedAt());
+    }
+
+    // 장바구니 자체가 없는 경우
+    public static GetCartResponse empty() {
+        return new GetCartResponse(null, List.of(), 0L, null, null);
     }
 
     public record Items(
