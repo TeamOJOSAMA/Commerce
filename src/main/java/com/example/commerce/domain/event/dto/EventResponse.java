@@ -9,7 +9,7 @@ public record EventResponse(
         Long id,
         Long productId,
         int discountRate,
-        int eventPrice,
+        Long eventPrice,
         int totalQuantity,
         int soldQuantity,
         LocalDateTime startAt,
