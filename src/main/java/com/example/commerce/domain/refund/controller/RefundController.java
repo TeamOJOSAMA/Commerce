@@ -9,10 +9,7 @@ import com.example.commerce.domain.refund.service.RefundService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/refunds")
@@ -25,5 +22,10 @@ public class RefundController {
     public ApiResponse<RefundResponse> createRefund(@AuthenticationPrincipal AuthUser authUser,
                                                     @Valid @RequestBody RefundRequest refundRequest) {
         return ApiResponse.ok("환불이 접수되었습니다.", refundService.createRefund(authUser.getUserId(),refundRequest));
+    }
+
+    @PostMapping("/{refundId}/complete")
+    public ApiResponse<RefundResponse> completeRefund(@AuthenticationPrincipal AuthUser authUser, @PathVariable Long refundId) {
+        return ApiResponse.ok("환불이 완료되었습니다.", refundService.completeRefund(authUser.getUserId(),refundId));
     }
 }
