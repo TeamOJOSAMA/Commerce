@@ -74,15 +74,23 @@ public class RefundService {
                         Integer::sum));
 
         List<Product> products = productRepository.findAllByIdsForUpdate(
-                new ArrayList<>(quantityByProductId.keySet())
-        );
-        products.forEach(product -> product.restoreStock(quantityByProductId.get(product.getId())));
+                new ArrayList<>(quantityByProductId.keySet()));
+
+        for (Product product : products) {
+            Integer quantity = quantityByProductId.get(product.getId());
+
+            if ((long) product.getStock() + quantity > Integer.MAX_VALUE) {
+                throw new BusinessException(ErrorCode.STOCK_AMOUNT_OVERFLOW);
+            }
+
+            product.restoreStock(quantity);
+        }
     }
 
     @Transactional
     public RefundResponse createRefund(Long userId, RefundRequest refundRequest) {
         Payment payment = paymentRepository.findByIdForUpdate(refundRequest.paymentId())
-                        .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
         validateOwner(payment, userId);
         validatePaid(payment);
@@ -99,7 +107,7 @@ public class RefundService {
         try {
             Refund saved = refundRepository.saveAndFlush(refund);
             log.info("환불 요청 생성 - refundId: {}, paymentId: {}, type: {}", saved.getId(), payment.getId(), refundRequest.refundType());
-            return  RefundResponse.from(saved);
+            return RefundResponse.from(saved);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.REFUND_NOT_ALLOWED, "이미 환불이 접수된 결제입니다.");
         }
@@ -132,7 +140,7 @@ public class RefundService {
                         .map(item -> {
                             OrderItem orderItem = orderItemMAP.get(item.orderItemId());
 
-                            if (orderItem ==null) {
+                            if (orderItem == null) {
                                 throw new BusinessException(ErrorCode.REFUND_ITEM_NOT_FOUND);
                             }
                             return new RefundItem(orderItem, item.quantity());
