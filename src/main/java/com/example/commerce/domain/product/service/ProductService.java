@@ -46,16 +46,16 @@ public class ProductService {
 
     private void validateSearchCondition(SearchProductRequest request) {
         if (request.minPrice() != null && request.minPrice() < 0) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+            throw new BusinessException(ErrorCode.NEGATIVE_PRICE);
         }
 
         if (request.maxPrice() != null && request.maxPrice() < 0) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+            throw new BusinessException(ErrorCode.NEGATIVE_PRICE);
         }
 
         if (request.minPrice() != null && request.maxPrice() != null
                 && request.minPrice() > request.maxPrice()) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+            throw new BusinessException(ErrorCode.INVALID_PRICE_RANGE);
         }
     }
 }

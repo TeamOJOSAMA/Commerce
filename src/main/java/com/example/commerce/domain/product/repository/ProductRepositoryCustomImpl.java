@@ -9,9 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-
 import java.util.List;
-
 import static com.example.commerce.domain.event.entity.EventStatus.ACTIVE;
 import static com.example.commerce.domain.event.entity.QEvent.event;
 import static com.example.commerce.domain.product.entity.QProduct.product;
