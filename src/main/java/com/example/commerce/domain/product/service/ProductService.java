@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 @Transactional(readOnly = true)
@@ -57,5 +59,9 @@ public class ProductService {
                 && request.minPrice() > request.maxPrice()) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
+    }
+
+    public List<Product> findAllForUpdate(List<Long> productIds) {
+        return productRepository.findAllByIdsForUpdate(productIds);
     }
 }
