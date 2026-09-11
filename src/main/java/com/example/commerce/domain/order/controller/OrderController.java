@@ -35,7 +35,7 @@ public class OrderController {
     @GetMapping("/preview")
     public ResponseEntity<ApiResponse<OrderPreviewResponse>> getOrderPreview(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam("cartItemIds") List<Long> cartItemIds
+            @RequestParam(value = "cartItemIds", required = false) List<Long> cartItemIds
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
                 orderFacade.getOrderPreview(authUser.getUserId(), cartItemIds)
