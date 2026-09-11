@@ -44,7 +44,11 @@ public class Refund  extends BaseEntity {
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
 
-    public Refund(Payment payment, List<RefundItem> refundItems, String reason) {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private RefundType refundType;
+
+    public Refund(Payment payment, List<RefundItem> refundItems, String reason, RefundType refundType) {
         if (!payment.isPaid()) {
             throw new BusinessException(ErrorCode.REFUND_NOT_ALLOWED);
         }
@@ -54,6 +58,7 @@ public class Refund  extends BaseEntity {
 
         this.payment = payment;
         this.reason = reason;
+        this.refundType = refundType;
         this.status = RefundStatus.REQUESTED;
         this.totalRefundAmount = refundItems.stream()
                 .mapToLong(RefundItem::getRefundAmount)
