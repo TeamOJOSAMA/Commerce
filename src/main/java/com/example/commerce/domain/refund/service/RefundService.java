@@ -31,9 +31,11 @@ public class RefundService {
     private final PaymentRepository paymentRepository;
 
     @Transactional
-    public RefundResponse createRefund(RefundRequest refundRequest) {
+    public RefundResponse createRefund(Long userId, RefundRequest refundRequest) {
         Payment payment = paymentRepository.findById(refundRequest.paymentId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        validateOwner(payment, userId);
 
         if (refundRepository.existsByPaymentId(payment.getId())) {
             throw new BusinessException(ErrorCode.REFUND_NOT_ALLOWED, "이미 환불이 접수된 결제입니다.");
@@ -50,6 +52,12 @@ public class RefundService {
             return  RefundResponse.from(saved);
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.REFUND_NOT_ALLOWED, "이미 환불이 접수된 결제입니다.");
+        }
+    }
+
+    private void validateOwner(Payment payment, Long userId) {
+        if (userId == null || !userId.equals(payment.getOrder().getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
         }
     }
 

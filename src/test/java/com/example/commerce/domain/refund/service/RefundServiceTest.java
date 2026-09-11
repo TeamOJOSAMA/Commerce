@@ -34,6 +34,8 @@ class RefundServiceTest {
     private static final long PAYMENT_ID = 1L;
     private static final long ITEM_A_ID = 10L;
     private static final long ITEM_B_ID = 11L;
+    private static final long OWNER_ID = 100L;
+    private static final long OTHER_USER_ID = 200L;
 
     @Mock private RefundRepository refundRepository;
     @Mock private PaymentRepository paymentRepository;
@@ -50,6 +52,7 @@ class RefundServiceTest {
         lenient().when(payment.getId()).thenReturn(PAYMENT_ID);
         lenient().when(payment.isPaid()).thenReturn(true);
         lenient().when(payment.getOrder()).thenReturn(order);
+        lenient().when(order.getUserId()).thenReturn(OWNER_ID);
         lenient().when(order.getOrderItems()).thenReturn(List.of(orderItemA, orderItemB));
         lenient().when(orderItemA.getId()).thenReturn(ITEM_A_ID);
         lenient().when(orderItemA.getQuantity()).thenReturn(2);
@@ -69,11 +72,22 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     void createRefund_full() {
         var request = new RefundRequest(PAYMENT_ID, RefundType.FULL, "단순 변심", null);
 
-        var response = refundService.createRefund(request);
+        var response = refundService.createRefund(OWNER_ID, request);
 
         assertThat(response.refundType()).isEqualTo(RefundType.FULL);
         assertThat(response.items()).hasSize(2);
         assertThat(response.totalRefundAmount()).isEqualTo(2 * 1_000L + 1 * 3_000L);
+    }
+
+    @Test
+    @DisplayName("결제 소유자가 아니면 FORBIDDEN_ACCESS")
+    void createRefund_notOwner() {
+        given(order.getUserId()).willReturn(OWNER_ID);
+
+        assertThatThrownBy(() -> refundService.createRefund(OTHER_USER_ID, new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException)e).getErrorCode())
+                .isEqualTo(ErrorCode.FORBIDDEN_ACCESS);
     }
 
     @Test
@@ -82,7 +96,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
         var request = new RefundRequest(PAYMENT_ID, RefundType.PARTIAL, "일부 반품",
                 List.of(new RefundRequest.Item(ITEM_A_ID, 1)));
 
-        var response = refundService.createRefund(request);
+        var response = refundService.createRefund(OWNER_ID, request);
 
         assertThat(response.refundType()).isEqualTo(RefundType.PARTIAL);
         assertThat(response.items()).singleElement()
@@ -98,7 +112,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     void createRefund_paymentNotFound() {
         given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> refundService.createRefund(new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
+        assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException)e).getErrorCode())
                 .isEqualTo(ErrorCode.PAYMENT_NOT_FOUND);
@@ -109,7 +123,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     void createRefund_alreadyRefunded() {
         given(refundRepository.existsByPaymentId(PAYMENT_ID)).willReturn(true);
 
-        assertThatThrownBy(() -> refundService.createRefund(new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
+        assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException)e).getErrorCode())
                 .isEqualTo(ErrorCode.REFUND_NOT_ALLOWED);
@@ -120,7 +134,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     void createRefund_partial_itemNotFound() {
         var request = new RefundRequest(PAYMENT_ID, RefundType.PARTIAL, "x", List.of(new RefundRequest.Item(999L, 1)));
 
-        assertThatThrownBy(() -> refundService.createRefund(request))
+        assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, request))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException)e).getErrorCode())
                 .isEqualTo(ErrorCode.REFUND_ITEM_NOT_FOUND);
@@ -131,7 +145,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     void createRefund_partial_quantityExceeds() {
         var request = new RefundRequest(PAYMENT_ID, RefundType.PARTIAL, "x", List.of(new RefundRequest.Item(ITEM_A_ID, 99)));
 
-        assertThatThrownBy(() -> refundService.createRefund(request))
+        assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, request))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException)e).getErrorCode())
                 .isEqualTo(ErrorCode.REFUND_ITEM_NOT_FOUND);
