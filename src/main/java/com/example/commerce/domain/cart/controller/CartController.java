@@ -81,4 +81,12 @@ public class CartController {
 
         // 참고로 204 No Content는 응답 본문을 포함하지 않으므로 상태 코드만 반환
     }
+
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteCart(@AuthenticationPrincipal AuthUser authUser) {
+
+        cartService.deleteCart(authUser.getUserId());
+
+        return ResponseEntity.noContent().build(); // 204
+    }
 }
