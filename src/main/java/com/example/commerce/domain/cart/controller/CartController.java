@@ -83,9 +83,9 @@ public class CartController {
     }
 
     @DeleteMapping
-    public ResponseEntity<ApiResponse<Void>> deleteCart(@AuthenticationPrincipal AuthUser authUser) {
+    public ResponseEntity<ApiResponse<Void>> deleteAllCartItem(@AuthenticationPrincipal AuthUser authUser) {
 
-        cartService.deleteCart(authUser.getUserId());
+        cartService.deleteAllCartItem(authUser.getUserId());
 
         return ResponseEntity.noContent().build(); // 204
     }
