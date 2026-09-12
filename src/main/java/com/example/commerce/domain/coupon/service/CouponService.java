@@ -2,10 +2,13 @@ package com.example.commerce.domain.coupon.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
+import com.example.commerce.domain.coupon.dto.CreateCouponResponse;
 import com.example.commerce.domain.coupon.entity.Coupon;
 import com.example.commerce.domain.coupon.entity.CouponStatus;
 import com.example.commerce.domain.coupon.entity.UserCoupon;
 import com.example.commerce.domain.coupon.entity.UserCouponStatus;
+import com.example.commerce.domain.coupon.repository.CouponRepository;
 import com.example.commerce.domain.coupon.repository.UserCouponRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +29,23 @@ public class CouponService {
 
     private static final int MAX_DISCOUNT_RATE = 100;
 
+    private final CouponRepository couponRepository;
     private final UserCouponRepository userCouponRepository;
+
+    @Transactional
+    public CreateCouponResponse createCoupon(CreateCouponRequest request) {
+        Coupon coupon = new Coupon(
+                request.name(),
+                request.discountRate(),
+                request.minimumOrderAmount(),
+                request.maximumDiscountAmount(),
+                request.totalQuantity()
+        );
+
+        Coupon savedCoupon = couponRepository.save(coupon);
+
+        return CreateCouponResponse.from(savedCoupon);
+    }
 
     // 조회용 계산이며 쿠폰 상태를 변경하지 않는다.
     public long calculateDiscount(Long userId, Long userCouponId, long couponEligibleAmount) {
