@@ -2,6 +2,8 @@ package com.example.commerce.domain.product.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.event.entity.Event;
+import com.example.commerce.domain.event.service.EventService;
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
 import com.example.commerce.domain.product.entity.Product;
@@ -13,13 +15,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 @Transactional
 public class ProductService {
 
     private final ProductRepository productRepository;
-    @Transactional(readOnly = true)
+    private final EventService eventService;
+
     public Page<ProductResponse> searchProduct(SearchProductRequest request, Pageable pageable) {
         validateSearchCondition(request);
 
@@ -32,14 +37,14 @@ public class ProductService {
 
         product.increaseViewCount();
 
-        return ProductResponse.from(product);
+        Event activeEvent = eventService.findActiveEvent(id).orElse(null);
+
+        return ProductResponse.of(product, activeEvent);
     }
 
     @Cacheable(value = "popularProducts", key = "#pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<ProductResponse> getPopularProducts(Pageable pageable) {
-        return productRepository
-                .findAllByOrderByViewCountDesc(pageable)
-                .map(ProductResponse::from);
+        return productRepository.findPopularProducts(pageable);
     }
 
     private void validateSearchCondition(SearchProductRequest request) {

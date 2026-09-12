@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
+import static com.example.commerce.domain.event.entity.EventStatus.ACTIVE;
+import static com.example.commerce.domain.event.entity.QEvent.event;
 import static com.example.commerce.domain.product.entity.QProduct.product;
 
 @RequiredArgsConstructor
@@ -32,10 +34,13 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                         product.price,
                         product.stock,
                         product.status,
-                        product.eventPrice,
-                        product.discountRate
+                        event.eventPrice,
+                        event.discountRate
                 ))
                 .from(product)
+                .leftJoin(event).on(
+                        event.product.id.eq(product.id).and(event.status.eq(ACTIVE))
+                )
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -45,6 +50,37 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                 .select(product.count())
                 .from(product)
                 .where(builder)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total != null ? total : 0L);
+    }
+
+    @Override
+    public Page<ProductResponse> findPopularProducts(Pageable pageable) {
+        List<ProductResponse> content = queryFactory
+                .select(Projections.constructor(ProductResponse.class,
+                        product.id,
+                        product.name,
+                        product.description,
+                        product.category,
+                        product.price,
+                        product.stock,
+                        product.status,
+                        event.eventPrice,
+                        event.discountRate
+                ))
+                .from(product)
+                .leftJoin(event).on(
+                        event.product.id.eq(product.id).and(event.status.eq(ACTIVE))
+                )
+                .orderBy(product.viewCount.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(product.count())
+                .from(product)
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total != null ? total : 0L);

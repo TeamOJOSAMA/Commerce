@@ -247,7 +247,7 @@ public class OrderFacade {
         // 한 번의 조회에서 같은 시각을 기준으로 모든 이벤트의 적용 여부를 판단한다.
         for (Event event : eventRepository.findApplicableEvents(
                 eventProductIds, EventStatus.ACTIVE, LocalDateTime.now())) {
-            if (events.putIfAbsent(event.getProductId(), event) != null) {
+            if (events.putIfAbsent(event.getProduct().getId(), event) != null) {
                 // 중복 이벤트에서 임의의 가격을 고르지 않고 잘못된 적용 상태로 거부한다.
                 throw new BusinessException(ErrorCode.ORDER_ITEM_UNAVAILABLE,
                         "상품에 적용 가능한 이벤트가 여러 개입니다.");
