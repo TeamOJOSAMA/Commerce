@@ -14,9 +14,10 @@ public enum InquiryStatus {
     COMPLETED;      // 완료
 
     // 역방향 전이(COMPLETED -> WAITING 등)를 원천 차단하기 위해 허용 목록으로 관리
+    // 종료는 어느 단계에서든 가능하다 (고객 요청, 자동 종료)
     private static final Map<InquiryStatus, Set<InquiryStatus>> ALLOWED_TRANSITIONS = Map.of(
-            BOT_HANDLING, Set.of(WAITING),
-            WAITING, Set.of(IN_PROGRESS),
+            BOT_HANDLING, Set.of(WAITING, COMPLETED),
+            WAITING, Set.of(IN_PROGRESS, COMPLETED),
             IN_PROGRESS, Set.of(COMPLETED),
             COMPLETED, Set.of()
     );

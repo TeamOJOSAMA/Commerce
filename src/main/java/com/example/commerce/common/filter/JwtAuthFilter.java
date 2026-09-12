@@ -33,8 +33,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // WebSocket 핸드셰이크는 헤더에 토큰을 실을 수 없어 STOMP CONNECT 시점에 인증한다
     private static final List<String> PERMITTED_PATH_PREFIXES = List.of(
             "/api/auth",
-            "/ws-stomp",
-            "/ws-echo"
+            "/api/ws-stomp",
+            "/api/ws-echo"
     );
 
     private static final String HTML_SUFFIX = ".html";
@@ -49,7 +49,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             return;
         }
-
 
         String bearerJwt = request.getHeader("Authorization");
         if (bearerJwt == null) {
