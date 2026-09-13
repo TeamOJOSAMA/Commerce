@@ -7,10 +7,14 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByOrderId(Long orderId);
+
+    // 주문 목록의 결제 상태를 한 번에 읽어 주문 수만큼 조회가 늘지 않게 한다.
+    List<Payment> findAllByOrderIdIn(List<Long> orderIds);
     boolean existsByOrderId(Long orderId);
 
     // 결제 엔티티를 먼저 로딩하지 않고 주문 잠금에 필요한 ID만 가져온다.
