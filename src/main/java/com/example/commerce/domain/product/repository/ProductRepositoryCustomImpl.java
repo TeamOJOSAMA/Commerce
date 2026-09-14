@@ -105,6 +105,8 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         }
         if (request.status() != null) {
             builder.and(product.status.eq(request.status()));
+        } else {
+            builder.and(product.status.ne(ProductStatus.SOLDOUT));
         }
 
         return builder;
