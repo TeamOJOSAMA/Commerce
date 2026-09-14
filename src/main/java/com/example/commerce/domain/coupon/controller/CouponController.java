@@ -51,7 +51,7 @@ public class CouponController {
         return ResponseEntity
                 .ok(ApiResponse
                         .ok(
-                                "모든 쿠폰을 열람했습니다.",
+                                "모든 쿠폰을 조회했습니다.",
                                 couponService.getAllCoupons(pageable, request)
                         ));
     }
@@ -75,6 +75,19 @@ public class CouponController {
         couponService.deleteCoupon(couponId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/coupons")
+    public ResponseEntity<ApiResponse<PageResponse<CouponResponse>>> getActiveCoupons(
+            Pageable pageable,
+            @Valid @ModelAttribute SearchCouponRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "활성 쿠폰을 조회했습니다.",
+                        couponService.getActiveCoupons(pageable, request)
+                )
+        );
     }
 
     // TODO: 쿠폰 발급 API 개발중

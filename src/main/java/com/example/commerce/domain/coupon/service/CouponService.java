@@ -130,6 +130,20 @@ public class CouponService {
     }
 
     /** 활성 쿠폰 조회 */
+    public PageResponse<CouponResponse> getActiveCoupons(Pageable pageable, SearchCouponRequest request) {
+
+        // ACTIVE로 고정해서 초기화
+        SearchCouponRequest condition = new SearchCouponRequest(
+                CouponStatus.ACTIVE,
+                request.discountRate(),
+                request.minimumOrderAmount(),
+                request.maximumDiscountAmount()
+        );
+
+        Page<CouponResponse> page = couponRepository.searchCouponByConditionPage(pageable, condition);
+
+        return PageResponse.from(page);
+    }
 
     /** 쿠폰 발급 */
 
