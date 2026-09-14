@@ -42,6 +42,8 @@ public class CouponService {
                 request.totalQuantity()
         );
 
+        validateDiscountPolicy(coupon);
+
         Coupon savedCoupon = couponRepository.save(coupon);
 
         return CreateCouponResponse.from(savedCoupon);
