@@ -28,11 +28,10 @@ public class ViewCountSyncScheduler {
 
         for (String key : keys) {
             Long productId = Long.parseLong(key.substring(prefix.length()));
-            long count = viewCountManager.getPending(productId);
+            long count = viewCountManager.getAndClear(productId);
 
             if (count > 0) {
                 productRepository.increaseViewCountBy(productId, count);
-                viewCountManager.clear(productId);
             }
         }
     }

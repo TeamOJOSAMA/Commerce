@@ -17,14 +17,10 @@ public class ProductViewCountManager {
         redisTemplate.opsForValue().increment(KEY_PREFIX + productId);
     }
 
-    public long getPending(Long productId) {
-        String value = redisTemplate.opsForValue().get(KEY_PREFIX + productId);
-        return value != null ? Long.parseLong(value) : 0L;
-    }
-
-    public void clear(Long productId) {
-        redisTemplate.delete(KEY_PREFIX + productId);
-    }
+   public long getAndClear(Long productId) {
+       String value = redisTemplate.opsForValue().getAndDelete(KEY_PREFIX + productId);
+       return value != null ? Long.parseLong(value) : 0L;
+   }
 
     public Set<String> getAllKeys() {
         return redisTemplate.keys(KEY_PREFIX + "*");
