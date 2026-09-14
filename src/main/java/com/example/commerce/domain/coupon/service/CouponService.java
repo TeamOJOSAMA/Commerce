@@ -108,6 +108,7 @@ public class CouponService {
     }
 
     /** 쿠폰 정책 삭제 (관리자 전용) */
+    @Transactional
     public void deleteCoupon(Long couponId) {
 
         // 삭제 대상 찾기
