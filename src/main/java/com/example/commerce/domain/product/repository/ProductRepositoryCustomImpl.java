@@ -2,6 +2,7 @@ package com.example.commerce.domain.product.repository;
 
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
+import com.example.commerce.domain.product.entity.ProductStatus;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -73,6 +74,7 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
                 .leftJoin(event).on(
                         event.product.id.eq(product.id).and(event.status.eq(ACTIVE))
                 )
+                .where(product.status.ne(ProductStatus.SOLDOUT))
                 .orderBy(product.viewCount.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
