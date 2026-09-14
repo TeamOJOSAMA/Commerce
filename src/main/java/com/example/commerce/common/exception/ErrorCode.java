@@ -65,6 +65,8 @@ public enum ErrorCode {
     INVALID_ORDER_CART_ITEM_IDS(HttpStatus.BAD_REQUEST, "ORDER_015", "장바구니 항목 ID는 양수여야 합니다."),
     DUPLICATE_ORDER_CART_ITEM(HttpStatus.BAD_REQUEST, "ORDER_016", "장바구니 항목을 중복 선택할 수 없습니다."),
     ORDER_ITEM_UNAVAILABLE(HttpStatus.BAD_REQUEST, "ORDER_017", "구매할 수 없는 주문 항목이 있습니다."),
+    DUPLICATE_ORDER_REQUEST(HttpStatus.CONFLICT, "ORDER_018", "이미 처리 중이거나 처리된 주문 요청입니다."),
+    ORDER_PAYMENT_AMOUNT_MISMATCH(HttpStatus.CONFLICT, "ORDER_019", "주문 금액이 변경되었습니다. 주문서를 새로고침해 주세요."),
 
     // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001","결제 정보를 찾을 수 없습니다."),

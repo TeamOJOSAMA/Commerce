@@ -1,11 +1,11 @@
 package com.example.commerce.domain.product.controller;
 
 import com.example.commerce.common.response.ApiResponse;
+import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
 import com.example.commerce.domain.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -20,11 +20,11 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAllProducts(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getAllProducts(
             SearchProductRequest request,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.searchProduct(request, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(productService.searchProduct(request, pageable))));
     }
 
     @GetMapping("/{id}")
@@ -33,9 +33,9 @@ public class ProductController {
     }
 
     @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getPopularProducts(
+    public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> getPopularProducts(
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.getPopularProducts(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(productService.getPopularProducts(pageable))));
     }
 }
