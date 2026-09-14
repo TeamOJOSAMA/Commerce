@@ -1,13 +1,13 @@
 package com.example.commerce.domain.coupon.controller;
 
 import com.example.commerce.common.response.ApiResponse;
+import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +34,7 @@ public class CouponController {
     }
 
     @GetMapping("/admin/coupons")
-    public ResponseEntity<ApiResponse<Page<CouponResponse>>> getAllCoupons(
+    public ResponseEntity<ApiResponse<PageResponse<CouponResponse>>> getAllCoupons(
             Pageable pageable,
             @Valid @ModelAttribute SearchCouponRequest request // @ModelAttribute = 바인딩 방식 명시
     ) {

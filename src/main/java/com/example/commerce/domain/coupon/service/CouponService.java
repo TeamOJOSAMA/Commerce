@@ -2,6 +2,7 @@ package com.example.commerce.domain.coupon.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
@@ -52,8 +53,11 @@ public class CouponService {
     }
 
     // 쿠폰 전체 조회 (관리자만 가능)
-    public Page<CouponResponse> getAllCoupons(Pageable pageable, SearchCouponRequest request) {
-        return couponRepository.searchCouponByConditionPage(pageable, request);
+    public PageResponse<CouponResponse> getAllCoupons(Pageable pageable, SearchCouponRequest request) {
+
+        Page<CouponResponse> page = couponRepository.searchCouponByConditionPage(pageable, request);
+
+        return PageResponse.from(page);
     }
 
     // 조회용 계산이며 쿠폰 상태를 변경하지 않는다.
