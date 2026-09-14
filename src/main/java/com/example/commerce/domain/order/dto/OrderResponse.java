@@ -1,13 +1,11 @@
 package com.example.commerce.domain.order.dto;
 
 import com.example.commerce.domain.order.entity.Order;
-import com.example.commerce.domain.order.entity.OrderItem;
 import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.refund.entity.Refund;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 주문 스냅샷과 현재 진행 상태를 보여 주는 상세 응답이다.
@@ -41,9 +39,7 @@ public record OrderResponse(
 ) {
     // 결제·환불이 아직 없는 주문도 조회할 수 있도록 둘 다 nullable로 받는다.
     public static OrderResponse from(Order order, Payment payment, Refund refund) {
-        // 항목별 쿠폰 할인 배분은 주문이 계산한다. 화면과 부분 환불이 같은 기준을 쓰도록 응답에 함께 싣는다.
-        Map<OrderItem, Long> couponDiscountShares = order.calculateCouponDiscountShares();
-
+        // 항목별 쿠폰 할인 배분액은 주문 생성 시 항목에 저장된 값을 그대로 읽는다. 화면과 부분 환불이 같은 값을 본다.
         return new OrderResponse(
                 order.getId(),
                 order.getOrderNumber(),
@@ -51,8 +47,7 @@ public record OrderResponse(
                         refund == null ? null : refund.getStatus()),
                 order.getOrderName(),
                 order.getOrderItems().stream()
-                        .map(orderItem -> OrderItemResponse.from(
-                                orderItem, couponDiscountShares.getOrDefault(orderItem, 0L)))
+                        .map(OrderItemResponse::from)
                         .toList(),
                 order.getTotalQuantity(),
                 order.getTotalAmount(),

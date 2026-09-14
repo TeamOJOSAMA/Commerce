@@ -7,18 +7,17 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Entity
 // 유일 제약: 같은 사용자가 같은 키로 보낸 주문 요청은 DB가 한 건만 허용한다.
@@ -140,43 +139,12 @@ public class Order extends BaseEntity {
     }
 
     /**
-     * 쿠폰 할인액을 쿠폰 적용 대상 항목의 금액 비율로 안분한 결과다.
-     * 항목별 실결제액(= 소계 - 배분액)을 화면에 표시하고 부분 환불 금액을 계산하는 기준이며,
-     * 원 미만을 버리고 남은 잔액은 마지막 대상 항목에 몰아 배분액 합계를 couponDiscountAmount와 정확히 일치시킨다.
-     * 이벤트가 적용된 항목은 쿠폰 대상이 아니므로 배분액이 0이다.
+     * 쿠폰을 적용하고 할인액을 항목별로 배분해 {@link OrderItem}에 저장한다.
      *
-     * <p>OrderItem은 equals/hashCode를 재정의하지 않아 동일성이 곧 식별자다.
-     * 저장 전 항목은 ID가 없으므로 ID 대신 인스턴스를 키로 사용한다.</p>
+     * <p>배분액은 조회 때마다 다시 계산하지 않고 이 시점에 한 번 정한다. 화면의 항목별 실결제액과
+     * 부분 환불의 환불액이 같은 값을 봐야 하고, 배분 규칙이 나중에 바뀌어도 이미 결제된 주문의 금액이
+     * 달라지면 안 되기 때문이다. 단가·상품명을 스냅샷으로 두는 이유와 같다.</p>
      */
-    public Map<OrderItem, Long> calculateCouponDiscountShares() {
-        Map<OrderItem, Long> shares = new IdentityHashMap<>();
-        orderItems.forEach(item -> shares.put(item, 0L));
-
-        long discountAmount = couponDiscountAmount == null ? 0L : couponDiscountAmount;
-        long eligibleAmount = getCouponEligibleAmount();
-        if (discountAmount == 0L || eligibleAmount == 0L) {
-            return shares;
-        }
-
-        List<OrderItem> eligibleItems = orderItems.stream()
-                .filter(item -> !item.hasAppliedEvent())
-                .toList();
-
-        long allocated = 0L;
-        // 마지막 항목은 나머지를 받으므로 비율 계산에서 제외한다.
-        for (OrderItem item : eligibleItems.subList(0, eligibleItems.size() - 1)) {
-            long share = BigDecimal.valueOf(discountAmount)
-                    .multiply(BigDecimal.valueOf(item.getSubTotal()))
-                    .divide(BigDecimal.valueOf(eligibleAmount), 0, RoundingMode.DOWN)
-                    .longValueExact();
-            shares.put(item, share);
-            allocated += share;
-        }
-        shares.put(eligibleItems.get(eligibleItems.size() - 1), discountAmount - allocated);
-
-        return shares;
-    }
-
     public void applyCoupon(Long userCouponId, Long discountAmount) {
         if (status != OrderStatus.PAYMENT_PENDING) {
             throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, "결제 대기 중인 주문에만 쿠폰을 적용할 수 있습니다.");
@@ -191,9 +159,60 @@ public class Order extends BaseEntity {
             throw new BusinessException(ErrorCode.INVALID_ORDER_COUPON_DISCOUNT);
         }
 
+        // 항목 배분이 실패하면 주문 금액도 바꾸지 않도록 먼저 수행한다.
+        allocateCouponDiscount(discountAmount);
+
         this.userCouponId = userCouponId;
         this.couponDiscountAmount = discountAmount;
         this.paymentAmount = totalAmount - discountAmount;
+    }
+
+    /**
+     * 쿠폰 할인액을 쿠폰 적용 대상 항목(이벤트 미적용)의 소계 비율로 나눈다.
+     *
+     * <p>원 미만은 버리고, 버림으로 남은 잔액은 버린 소수 부분이 큰 항목부터 1원씩 더한다(동률이면 앞 항목).
+     * 잔액을 마지막 항목에 몰면 소액 항목의 배분액이 소계를 넘어 실결제액이 음수가 될 수 있어 이렇게 한다.
+     * 소수 부분이 남은 항목은 소계보다 작은 값을 받은 상태라 1원을 더해도 소계를 넘지 않고,
+     * 잔액은 항상 소수 부분이 남은 항목 수보다 작으므로 더할 항목이 모자라지 않는다.
+     * 결과는 배분액 합계 == 할인액, 0 <= 항목 배분액 <= 항목 소계를 만족한다.</p>
+     */
+    private void allocateCouponDiscount(long discountAmount) {
+        if (discountAmount == 0L) {
+            return;
+        }
+
+        List<OrderItem> eligibleItems = orderItems.stream()
+                .filter(item -> !item.hasAppliedEvent())
+                .toList();
+        BigInteger eligibleAmount = BigInteger.valueOf(getCouponEligibleAmount());
+        BigInteger discount = BigInteger.valueOf(discountAmount);
+
+        int size = eligibleItems.size();
+        long[] shares = new long[size];
+        BigInteger[] remainders = new BigInteger[size];
+        long allocated = 0L;
+        for (int i = 0; i < size; i++) {
+            // 할인액 × 소계는 long을 넘을 수 있어 BigInteger로 계산한다.
+            BigInteger[] quotientAndRemainder = discount
+                    .multiply(BigInteger.valueOf(eligibleItems.get(i).getSubTotal()))
+                    .divideAndRemainder(eligibleAmount);
+            shares[i] = quotientAndRemainder[0].longValueExact();
+            remainders[i] = quotientAndRemainder[1];
+            allocated += shares[i];
+        }
+
+        // 나머지가 큰 항목 순으로 정렬하되 동률이면 원래 순서를 유지한다(정렬은 안정적이다).
+        List<Integer> indexesByRemainderDesc = IntStream.range(0, size).boxed()
+                .sorted(Comparator.comparing((Integer index) -> remainders[index]).reversed())
+                .toList();
+        long leftover = discountAmount - allocated;
+        for (int rank = 0; rank < leftover; rank++) {
+            shares[indexesByRemainderDesc.get(rank)]++;
+        }
+
+        for (int i = 0; i < size; i++) {
+            eligibleItems.get(i).allocateCouponDiscount(shares[i]);
+        }
     }
 
     private String generateOrderNumber() {
