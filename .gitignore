@@ -36,4 +36,10 @@ out/
 ### VS Code ###
 .vscode/
 
-*.yml
+build/
+.gradle/
+.idea/
+*.log
+
+### macOS ###
+.DS_Store
