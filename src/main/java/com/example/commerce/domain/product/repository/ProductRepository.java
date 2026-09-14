@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,4 +26,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             order by product.id asc
             """)
     List<Product> findAllByIdsForUpdate(@Param("productIds") List<Long> productIds);
+    @Modifying(clearAutomatically = true)
+    @Query("update Product p set p.viewCount = p.viewCount + 1 where p.id = :id")
+    void increaseViewCount(@Param("id") Long id);
 }

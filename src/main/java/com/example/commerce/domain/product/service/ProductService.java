@@ -35,7 +35,7 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        product.increaseViewCount();
+        productRepository.increaseViewCount(id);   // 엔티티 메서드 대신 벌크 업데이트
 
         Event activeEvent = eventService.findActiveEvent(id).orElse(null);
 
