@@ -2,8 +2,10 @@ package com.example.commerce.domain.coupon.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
-import com.example.commerce.domain.coupon.dto.CreateCouponResponse;
+import com.example.commerce.domain.coupon.dto.CouponResponse;
+import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.entity.Coupon;
 import com.example.commerce.domain.coupon.entity.CouponStatus;
 import com.example.commerce.domain.coupon.entity.UserCoupon;
@@ -11,6 +13,8 @@ import com.example.commerce.domain.coupon.entity.UserCouponStatus;
 import com.example.commerce.domain.coupon.repository.CouponRepository;
 import com.example.commerce.domain.coupon.repository.UserCouponRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +36,9 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final UserCouponRepository userCouponRepository;
 
+    // 쿠폰 정책 생성
     @Transactional
-    public CreateCouponResponse createCoupon(CreateCouponRequest request) {
+    public CouponResponse createCoupon(CreateCouponRequest request) {
         Coupon coupon = new Coupon(
                 request.name(),
                 request.discountRate(),
@@ -46,7 +51,15 @@ public class CouponService {
 
         Coupon savedCoupon = couponRepository.save(coupon);
 
-        return CreateCouponResponse.from(savedCoupon);
+        return CouponResponse.from(savedCoupon);
+    }
+
+    // 쿠폰 전체 조회 (관리자만 가능)
+    public PageResponse<CouponResponse> getAllCoupons(Pageable pageable, SearchCouponRequest request) {
+
+        Page<CouponResponse> page = couponRepository.searchCouponByConditionPage(pageable, request);
+
+        return PageResponse.from(page);
     }
 
     // 조회용 계산이며 쿠폰 상태를 변경하지 않는다.

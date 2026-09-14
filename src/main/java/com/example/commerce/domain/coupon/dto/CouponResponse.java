@@ -5,7 +5,7 @@ import com.example.commerce.domain.coupon.entity.CouponStatus;
 
 import java.time.LocalDateTime;
 
-public record CreateCouponResponse(
+public record CouponResponse(
         Long couponId,
         String couponName,
         Integer discountRate,
@@ -17,8 +17,8 @@ public record CreateCouponResponse(
         LocalDateTime issueStartsAt,
         LocalDateTime issueEndsAt
 ) {
-    public static CreateCouponResponse from(Coupon coupon) {
-        return new CreateCouponResponse(
+    public static CouponResponse from(Coupon coupon) {
+        return new CouponResponse(
                 coupon.getId(),
                 coupon.getName(),
                 coupon.getDiscountRate(),
