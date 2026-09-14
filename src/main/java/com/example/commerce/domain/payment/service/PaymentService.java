@@ -11,8 +11,15 @@ import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 결제 생성·승인·실패를 처리하고 승인 시 주문 확정과 쿠폰 사용을 함께 반영한다.
@@ -28,31 +35,39 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final CouponService couponService;
 
-    /** 주문 생성 트랜잭션에 참여하여 저장된 주문에 READY 결제를 한 건 생성한다. */
     @Transactional
     public Payment createPayment(Order order, long amount) {
         // 결제가 주문을 참조하므로 Facade에서 주문을 먼저 저장해 ID를 확보해야 한다.
         if (order == null || order.getId() == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
-        // 기존 주문에 대한 호출도 취소와 겹치지 않도록 주문 잠금과 상태 검사를 수행한다.
-        Order lockedOrder = getOrderForUpdate(order.getId());
-
-        validatePendingOrder(lockedOrder);
+        // 신규 주문은 INSERT로 보호되므로 전달받은 주문을 다시 잠금 조회하지 않는다.
+        validatePendingOrder(order);
         // 하나의 주문에 대한 결제 요청은 한 번만 생성 가능 (중복 결제 요청 방지)
-        validateDuplicatePayment(lockedOrder.getId());
+        validateDuplicatePayment(order.getId());
         // 내부 호출에서 전달된 금액도 저장된 주문의 최종 결제 금액과 비교한다.
-        validatePaymentAmount(lockedOrder, amount);
+        validatePaymentAmount(order, amount);
 
-        Payment payment = Payment.of(lockedOrder, amount);
-        Payment savedPayment = paymentRepository.save(payment);
-
-        log.info("결제 요청 생성 완료 - orderId: {}, amount: {}", order.getId(), amount);
-        // 내부 호출자인 OrderFacade가 주문과 결제를 묶어 응답 DTO로 변환한다.
-        return savedPayment;
+        Payment payment = Payment.of(order, amount);
+        try {
+            // 사전 중복 검사를 함께 통과한 요청도 DB 유일성 제약으로 거부한다.
+            Payment saved = paymentRepository.saveAndFlush(payment);
+            log.info("결제 요청 생성 완료 - orderId: {}, amount: {}", order.getId(), amount);
+            return saved;
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.PAYMENT_DUPLICATED);
+        }
     }
 
-    // 빠른 중복 검사이며 최종적인 주문당 한 건 보장은 DB 유일성 제약도 담당한다.
+    /**
+     * 주문당 결제 한 건을 사전에 확인한다.
+     *
+     * <p>현재 유일한 호출 경로인 주문 생성에서는 방금 INSERT한 주문이라 결제가 있을 수 없고,
+     * 동시 요청은 payments.order_id 유일성 제약이 최종적으로 막는다. 그럼에도 남겨두는 이유는
+     * 이 메서드가 "신규 주문 전용"이라는 전제를 잃고 다른 호출자가 생겼을 때
+     * 제약 위반 예외가 아니라 도메인 오류로 먼저 걸러지게 하기 위해서다.
+     * 주문 생성 경로에서는 조회 한 번의 비용이 추가된다.</p>
+     */
     private void validateDuplicatePayment(Long orderId) {
         if (paymentRepository.existsByOrderId(orderId)) {
             throw new BusinessException(ErrorCode.PAYMENT_DUPLICATED);
@@ -81,7 +96,6 @@ public class PaymentService {
         return PaymentResponse.from(payment);
     }
 
-    /** 결제 실패만 기록한다. 대기 주문과 쿠폰 예약은 주문 취소 시 별도로 정리한다.*/
     @Transactional
     public PaymentResponse failPayment(Long userId, Long paymentId, String failReason) {
         Order order = getPaymentOrderForUpdate(paymentId);
@@ -99,6 +113,30 @@ public class PaymentService {
         Payment payment = getPayment(paymentId);
         validateOwner(payment.getOrder(), userId);
         return PaymentResponse.from(payment);
+    }
+
+    // 주문 상세 조립을 위한 내부 조회다. 결제가 없을 수 있어 Optional로 반환한다.
+    // 소유권은 주문을 조회한 호출자가 이미 검증한다.
+    public Optional<Payment> findPaymentByOrderId(Long orderId) {
+        return paymentRepository.findByOrderId(orderId);
+    }
+
+    // 주문 목록 조립용 내부 조회다. 결제가 없는 주문은 결과에 담기지 않는다.
+    public Map<Long, Payment> findPaymentsByOrderIds(List<Long> orderIds) {
+        if (orderIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return paymentRepository.findAllByOrderIdIn(orderIds).stream()
+                // 지연 로딩된 주문 프록시의 ID는 추가 조회 없이 읽는다.
+                .collect(Collectors.toMap(payment -> payment.getOrder().getId(), Function.identity()));
+    }
+
+    // 주문 취소에서 결제를 잠근다. 반드시 주문을 잠근 뒤 호출해야 주문 → 결제 잠금 순서가 유지된다.
+    // 호출 트랜잭션에 참여하므로 잠금은 호출자의 트랜잭션이 끝날 때까지 유지된다.
+    @Transactional
+    public Optional<Payment> findPaymentByOrderIdForUpdate(Long orderId) {
+        return paymentRepository.findByOrderIdForUpdate(orderId);
     }
 
     private void validateOwner(Order order, Long userId) {

@@ -7,17 +7,31 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders")
+// 유일 제약: 같은 사용자가 같은 키로 보낸 주문 요청은 DB가 한 건만 허용한다.
+// 인덱스: 주문 목록은 사용자로 거른 뒤 생성 시각 역순으로 읽으므로 정렬까지 인덱스로 처리한다.
+//         유일 제약의 (user_id, idempotency_key)는 user_id 검색만 돕고 created_at 정렬은 돕지 못한다.
+@Table(
+        name = "orders",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_orders_user_id_idempotency_key",
+                columnNames = {"user_id", "idempotency_key"}),
+        indexes = @Index(
+                name = "idx_orders_user_id_created_at",
+                columnList = "user_id, created_at"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseEntity {
@@ -56,9 +70,22 @@ public class Order extends BaseEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
-    public Order(Long userId, List<OrderItem> orderItems) {
+    // 기존 주문에는 값이 없을 수 있어 컬럼은 null을 허용하고, 새 주문은 생성자에서 필수로 받는다.
+    @Column(name = "idempotency_key", length = 64, updatable = false)
+    private String idempotencyKey;
+
+    // 취소된 주문만 값을 갖는다. 기존 행은 null이므로 조회 쪽에서 사유 미상으로 다뤄야 한다.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancel_reason", length = 30)
+    private OrderCancelReason cancelReason;
+
+    public Order(Long userId, List<OrderItem> orderItems, String idempotencyKey) {
         if (orderItems == null || orderItems.isEmpty()) {
             throw new BusinessException(ErrorCode.ORDER_ITEMS_REQUIRED);
+        }
+        // 키가 없으면 중복 요청을 구분할 수 없으므로 저장 전에 거부한다.
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "멱등성 키는 필수입니다.");
         }
 
         calculateTotalAmount(orderItems);
@@ -66,6 +93,7 @@ public class Order extends BaseEntity {
         this.userId = userId;
         this.orderNumber = generateOrderNumber();
         this.status = OrderStatus.PAYMENT_PENDING;
+        this.idempotencyKey = idempotencyKey;
 
         orderItems.forEach(this::addOrderItem);
     }
@@ -79,6 +107,20 @@ public class Order extends BaseEntity {
     // JPA가 관리하는 내부 목록은 유지하며 항목 객체 자체를 복제하는 것은 아니다.
     public List<OrderItem> getOrderItems() {
         return List.copyOf(orderItems);
+    }
+
+    // 목록과 결제창에 표시할 주문명이다. 항목이 여럿이면 "상품명 외 N건"으로 요약한다.
+    public String getOrderName() {
+        if (orderItems.isEmpty()) {
+            return "주문";
+        }
+
+        String firstName = orderItems.get(0).getProductName();
+        if (orderItems.size() == 1) {
+            return firstName;
+        }
+
+        return firstName + " 외 " + (orderItems.size() - 1) + "건";
     }
 
     public long getTotalQuantity() {
@@ -95,6 +137,44 @@ public class Order extends BaseEntity {
             }
         }
         return eligibleAmount;
+    }
+
+    /**
+     * 쿠폰 할인액을 쿠폰 적용 대상 항목의 금액 비율로 안분한 결과다.
+     * 항목별 실결제액(= 소계 - 배분액)을 화면에 표시하고 부분 환불 금액을 계산하는 기준이며,
+     * 원 미만을 버리고 남은 잔액은 마지막 대상 항목에 몰아 배분액 합계를 couponDiscountAmount와 정확히 일치시킨다.
+     * 이벤트가 적용된 항목은 쿠폰 대상이 아니므로 배분액이 0이다.
+     *
+     * <p>OrderItem은 equals/hashCode를 재정의하지 않아 동일성이 곧 식별자다.
+     * 저장 전 항목은 ID가 없으므로 ID 대신 인스턴스를 키로 사용한다.</p>
+     */
+    public Map<OrderItem, Long> calculateCouponDiscountShares() {
+        Map<OrderItem, Long> shares = new IdentityHashMap<>();
+        orderItems.forEach(item -> shares.put(item, 0L));
+
+        long discountAmount = couponDiscountAmount == null ? 0L : couponDiscountAmount;
+        long eligibleAmount = getCouponEligibleAmount();
+        if (discountAmount == 0L || eligibleAmount == 0L) {
+            return shares;
+        }
+
+        List<OrderItem> eligibleItems = orderItems.stream()
+                .filter(item -> !item.hasAppliedEvent())
+                .toList();
+
+        long allocated = 0L;
+        // 마지막 항목은 나머지를 받으므로 비율 계산에서 제외한다.
+        for (OrderItem item : eligibleItems.subList(0, eligibleItems.size() - 1)) {
+            long share = BigDecimal.valueOf(discountAmount)
+                    .multiply(BigDecimal.valueOf(item.getSubTotal()))
+                    .divide(BigDecimal.valueOf(eligibleAmount), 0, RoundingMode.DOWN)
+                    .longValueExact();
+            shares.put(item, share);
+            allocated += share;
+        }
+        shares.put(eligibleItems.get(eligibleItems.size() - 1), discountAmount - allocated);
+
+        return shares;
     }
 
     public void applyCoupon(Long userCouponId, Long discountAmount) {
@@ -171,12 +251,23 @@ public class Order extends BaseEntity {
         changeStatus(OrderStatus.CONFIRMED);
     }
 
-    public void cancel() {
+    /**
+     * 주문을 취소하고 경위를 함께 남긴다.
+     *
+     * <p>사유를 선택 인자로 두지 않는 것은 의도다. 취소 경로가 늘어날 때 사유를 빠뜨린 호출을
+     * 컴파일 단계에서 잡기 위해서다. 이미 취소된 주문은 최초 취소의 시각과 사유를 유지한다.</p>
+     */
+    public void cancel(OrderCancelReason cancelReason) {
+        if (cancelReason == null) {
+            throw new BusinessException(ErrorCode.INVALID_ORDER_STATUS, "주문 취소 사유는 필수입니다.");
+        }
+
         if (status == OrderStatus.CANCELLED) {
             return;
         }
 
         changeStatus(OrderStatus.CANCELLED);
         this.canceledAt = LocalDateTime.now();
+        this.cancelReason = cancelReason;
     }
 }

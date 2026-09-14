@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface EventRepository extends JpaRepository<Event, Long> , EventCustomRepository {
 
     // 시작 시각은 포함하고 종료 시각은 제외한다. 여러 상품을 동일한 now로 한 번에 조회한다.
-    // 조회 결과가 상품당 두 건 이상이면 Facade가 중복 이벤트로 거부한다.
+    // 상품당 진행 중 이벤트는 하나만 존재한다는 것이 이벤트 도메인의 전제이며, 주문은 이를 다시 검사하지 않는다.
     @Query("""
             select event from Event event
             where event.product.id in :productIds

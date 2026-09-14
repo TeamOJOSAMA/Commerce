@@ -66,13 +66,10 @@ class PaymentServiceTest {
     @DisplayName("결제 생성 성공 - READY 상태로 저장된다")
     void createPayment_success() {
 
-        given(orderRepository.findByIdForUpdate(ORDER_ID))
-                .willReturn(Optional.of(order));
-
         given(paymentRepository.existsByOrderId(ORDER_ID))
                 .willReturn(false);
 
-        given(paymentRepository.save(any(Payment.class)))
+        given(paymentRepository.saveAndFlush(any(Payment.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         Payment payment = paymentService.createPayment(order, PAYMENT_AMOUNT);
@@ -81,14 +78,12 @@ class PaymentServiceTest {
         assertThat(payment.getAmount()).isEqualTo(PAYMENT_AMOUNT);
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.READY);
         assertThat(payment.getPaidAt()).isNull();
+        then(orderRepository).shouldHaveNoInteractions();
     }
 
     @Test
     @DisplayName("요청 금액이 주문의 결제 금액과 다르면 AMOUNT_MISMATCH, 저장하지 않는다")
     void createPayment_amountMismatch() {
-
-        given(orderRepository.findByIdForUpdate(ORDER_ID))
-                .willReturn(Optional.of(order));
 
         given(paymentRepository.existsByOrderId(ORDER_ID))
                 .willReturn(false);
@@ -98,15 +93,12 @@ class PaymentServiceTest {
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.AMOUNT_MISMATCH);
 
-        then(paymentRepository).should(never()).save(any());
+        then(paymentRepository).should(never()).saveAndFlush(any());
     }
 
     @Test
     @DisplayName("이미 결제가 존재하는 주문이면 PAYMENT_DUPLICATED")
     void createPayment_duplicated() {
-
-        given(orderRepository.findByIdForUpdate(ORDER_ID))
-                .willReturn(Optional.of(order));
 
         given(paymentRepository.existsByOrderId(ORDER_ID))
                 .willReturn(true);
@@ -116,7 +108,7 @@ class PaymentServiceTest {
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.PAYMENT_DUPLICATED);
 
-        then(paymentRepository).should(never()).save(any());
+        then(paymentRepository).should(never()).saveAndFlush(any());
     }
 
     // -------- approvePayment --------

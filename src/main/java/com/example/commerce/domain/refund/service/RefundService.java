@@ -3,6 +3,7 @@ package com.example.commerce.domain.refund.service;
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.domain.order.entity.Order;
+import com.example.commerce.domain.order.entity.OrderCancelReason;
 import com.example.commerce.domain.order.entity.OrderItem;
 import com.example.commerce.domain.order.repository.OrderRepository;
 import com.example.commerce.domain.payment.entity.Payment;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,27 @@ public class RefundService {
     private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+
+    // 주문 상세 조립을 위한 내부 조회다. 환불이 없을 수 있어 Optional로 반환한다.
+    // 소유권은 주문을 조회한 호출자가 이미 검증한다.
+    public Optional<Refund> findRefundByPaymentId(Long paymentId) {
+        if (paymentId == null) {
+            return Optional.empty();
+        }
+
+        return refundRepository.findByPaymentId(paymentId);
+    }
+
+    // 주문 목록 조립용 내부 조회다. 결제 ID를 키로 돌려주므로 호출자가 주문과 이어 붙인다.
+    public Map<Long, Refund> findRefundsByPaymentIds(List<Long> paymentIds) {
+        if (paymentIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return refundRepository.findAllByPaymentIdIn(paymentIds).stream()
+                // 지연 로딩된 결제 프록시의 ID는 추가 조회 없이 읽는다.
+                .collect(Collectors.toMap(refund -> refund.getPayment().getId(), Function.identity()));
+    }
 
     @Transactional
     public RefundResponse completeRefund(Long userId, Long refundId) {
@@ -63,7 +86,7 @@ public class RefundService {
     private void cancelOrder(Long orderId) {
         Order order = orderRepository.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
-        order.cancel();
+        order.cancel(OrderCancelReason.REFUND_COMPLETED);
     }
 
     private void restoreStock(Refund refund) {
