@@ -1,5 +1,9 @@
 package com.example.commerce.domain.event.entity;
 
+import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -9,26 +13,26 @@ import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "events")
+@Table(
+        name = "events",
+        indexes = @Index(name = "idx_status_end_at", columnList = "status, end_at")
+)
 @Getter
-public class Event {
+public class Event extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false, length = 30)
-    private EventType eventType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(name = "discount_rate", nullable = false)
     private int discountRate;
 
-    // 주문의 long 금액 계산과 타입을 맞춘 최종 행사 단가다.
     @Column(name = "event_price", nullable = false)
-    private long eventPrice;
+    private Long eventPrice;
 
     @Column(name = "total_quantity", nullable = false)
     private int totalQuantity;
@@ -46,5 +50,27 @@ public class Event {
     @Column(nullable = false, length = 30)
     private EventStatus status;
 
+    public Event(Product product, int discountRate, Long eventPrice,
+                 int totalQuantity, LocalDateTime startAt, LocalDateTime endAt) {
+        validate(product, eventPrice);
 
+        this.product = product;
+        this.discountRate = discountRate;
+        this.eventPrice = eventPrice;
+        this.totalQuantity = totalQuantity;
+        this.soldQuantity = 0;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.status = EventStatus.ACTIVE;
+    }
+
+    private void validate(Product product, Long eventPrice) {
+        if (eventPrice <= 0 || eventPrice >= product.getPrice()) {
+            throw new BusinessException(ErrorCode.INVALID_EVENT_PRICE);
+        }
+    }
+
+    public void end() {
+        this.status = EventStatus.ENDED;
+    }
 }

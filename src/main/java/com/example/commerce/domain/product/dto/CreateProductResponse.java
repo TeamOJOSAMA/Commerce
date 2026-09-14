@@ -11,9 +11,7 @@ public record CreateProductResponse(
         ProductCategory category,
         Long price,
         int stock,
-        ProductStatus status,
-        Long eventPrice,
-        Integer discountRate
+        ProductStatus status
 ) {
     public static CreateProductResponse from(Product product) {
         return new CreateProductResponse(
@@ -23,9 +21,7 @@ public record CreateProductResponse(
                 product.getCategory(),
                 product.getPrice(),
                 product.getStock(),
-                product.getStatus(),
-                product.getEventPrice(),
-                product.getDiscountRate()
+                product.getStatus()
         );
     }
 }

@@ -379,7 +379,10 @@ public class OrderFacade {
         // 한 번의 조회에서 같은 시각을 기준으로 모든 이벤트의 적용 여부를 판단한다.
         return eventRepository.findApplicableEvents(eventProductIds, EventStatus.ACTIVE, LocalDateTime.now())
                 .stream()
-                .collect(Collectors.toMap(Event::getProductId, Function.identity()));
+                .collect(Collectors.toMap(
+                        event -> event.getProduct().getId(),
+                        Function.identity()
+                ));
     }
 
     /**
