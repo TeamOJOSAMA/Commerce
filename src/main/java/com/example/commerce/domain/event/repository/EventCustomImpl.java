@@ -31,6 +31,7 @@ public class EventCustomImpl implements EventCustomRepository {
                         event.id,
                         event.product.id,
                         event.discountRate,
+                        event.eventPrice,
                         event.totalQuantity,
                         event.soldQuantity,
                         event.startAt,
