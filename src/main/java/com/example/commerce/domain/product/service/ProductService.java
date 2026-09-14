@@ -24,7 +24,9 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final EventService eventService;
+    private final ProductViewCountManager viewCountManager;
 
+    @Transactional(readOnly = true)
     public Page<ProductResponse> searchProduct(SearchProductRequest request, Pageable pageable) {
         validateSearchCondition(request);
 
@@ -35,7 +37,7 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        productRepository.increaseViewCount(id);   // 엔티티 메서드 대신 벌크 업데이트
+        viewCountManager.increase(id);   // 엔티티 메서드 대신 벌크 업데이트
 
         Event activeEvent = eventService.findActiveEvent(id).orElse(null);
 
