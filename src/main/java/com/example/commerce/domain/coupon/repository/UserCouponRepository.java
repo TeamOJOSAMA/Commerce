@@ -20,4 +20,7 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select userCoupon from UserCoupon userCoupon where userCoupon.id = :id and userCoupon.user.id = :userId")
     Optional<UserCoupon> findByIdAndUserIdForUpdate(@Param("id") Long id, @Param("userId") Long userId);
+
+    // 쿠폰 삭제 전 발급 이력 존재 여부 확인
+    boolean existsByCouponId(Long couponId);
 }

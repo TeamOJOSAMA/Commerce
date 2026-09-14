@@ -61,6 +61,14 @@ public class CouponController {
                         ));
     }
 
+    @DeleteMapping("/admin/coupons/{couponId}")
+    public ResponseEntity<ApiResponse<CouponResponse>> deleteCoupon(@PathVariable("couponId") Long couponId) {
+
+        couponService.deleteCoupon(couponId);
+
+        return ResponseEntity.noContent().build();
+    }
+
     // TODO: 쿠폰 발급 API 개발중
 //    @PostMapping("/coupons/{couponId}/issue")
 //    public ResponseEntity<ApiResponse<CreateUserCouponResponse>> createUserCoupon(

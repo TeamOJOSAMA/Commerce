@@ -52,6 +52,8 @@ public enum ErrorCode {
     INVALID_COUPON_ELIGIBLE_AMOUNT(HttpStatus.BAD_REQUEST, "COUPON_008", "쿠폰 적용 대상 금액은 0 이상이어야 합니다."),
     INVALID_COUPON_STATUS(HttpStatus.BAD_REQUEST, "COUPON_009", "처리할 수 없는 쿠폰 상태입니다."),
     INVALID_COUPON_QUANTITY(HttpStatus.BAD_REQUEST, "COUPON_010", "전체 쿠폰 수량은 이미 발급된 수량보다 작을 수 없습니다."),
+    COUPON_NOT_INACTIVE(HttpStatus.CONFLICT,"COUPON_011", "비활성화된 쿠폰만 삭제할 수 있습니다."),
+    COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT,"COUPON_012", "발급 이력이 있는 쿠폰은 삭제할 수 없습니다."),
 
     // 주문
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001","주문을 찾을 수 없습니다."),

@@ -108,6 +108,25 @@ public class CouponService {
     }
 
     /** 쿠폰 정책 삭제 (관리자 전용) */
+    public void deleteCoupon(Long couponId) {
+
+        // 삭제 대상 찾기
+        Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+
+        // 쿠폰 상태가 비활성이어야만 삭제 가능
+        if (coupon.getStatus() != CouponStatus.INACTIVE) {
+            throw new BusinessException(ErrorCode.COUPON_NOT_INACTIVE);
+        }
+
+        // 이 쿠폰을 갖고있는 사용자가 단 한 몀도 없어야 삭제 가능
+        if (userCouponRepository.existsByCouponId(couponId)) {
+            throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
+        }
+
+        // 삭제
+        couponRepository.delete(coupon);
+    }
 
     /** 활성 쿠폰 조회 */
 
