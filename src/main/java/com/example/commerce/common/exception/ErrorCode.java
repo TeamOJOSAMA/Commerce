@@ -30,10 +30,13 @@ public enum ErrorCode {
     PRICE_ERROR(HttpStatus.BAD_REQUEST,"PRODUCT_5","최소 가격이 최대 가격보다 클수 없습니다"),
     STOCK_AMOUNT_OVERFLOW(HttpStatus.BAD_REQUEST, "PRODUCT_006", "재고 수량이 허용 범위를 초과했습니다."),
     INVALID_EVENT_STOCK(HttpStatus.BAD_REQUEST, "PRODUCT_007", "이벤트 재고가 설정되지 않았습니다."),
+    NEGATIVE_PRICE(HttpStatus.BAD_REQUEST, "PRODUCT_008","가격은 0 이상이어야 합니다."),
+    INVALID_PRICE_RANGE(HttpStatus.BAD_REQUEST, "PRODUCT_009","최소 가격이 최대 가격보다 클 수 없습니다."),
 
     // 이벤트
     INVALID_EVENT_PRICE(HttpStatus.BAD_REQUEST,"EVENT_001", "이벤트중인 상품가격이 필요합니다"),
     EVENT_INFO_REQUIRED(HttpStatus.BAD_REQUEST,"EVENT_002", "이벤트 세부 내용이 없습니다"),
+    EVENT_NOT_FOUND(HttpStatus.BAD_REQUEST, "EVENT_003","이벤트 상품을 찾을수 없습니다"),
     // 장바구니
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_001","장바구니 상품을 찾을 수 없습니다."),
     CART_EMPTY(HttpStatus.NOT_FOUND, "CART_002", "장바구니가 비어있습니다."),
@@ -65,6 +68,8 @@ public enum ErrorCode {
     INVALID_ORDER_CART_ITEM_IDS(HttpStatus.BAD_REQUEST, "ORDER_015", "장바구니 항목 ID는 양수여야 합니다."),
     DUPLICATE_ORDER_CART_ITEM(HttpStatus.BAD_REQUEST, "ORDER_016", "장바구니 항목을 중복 선택할 수 없습니다."),
     ORDER_ITEM_UNAVAILABLE(HttpStatus.BAD_REQUEST, "ORDER_017", "구매할 수 없는 주문 항목이 있습니다."),
+    DUPLICATE_ORDER_REQUEST(HttpStatus.CONFLICT, "ORDER_018", "이미 처리 중이거나 처리된 주문 요청입니다."),
+    ORDER_PAYMENT_AMOUNT_MISMATCH(HttpStatus.CONFLICT, "ORDER_019", "주문 금액이 변경되었습니다. 주문서를 새로고침해 주세요."),
 
     // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001","결제 정보를 찾을 수 없습니다."),

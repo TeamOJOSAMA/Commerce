@@ -18,6 +18,14 @@ repositories {
     mavenCentral()
 }
 
+bootJar {
+    enabled = true
+}
+
+jar {
+    enabled = false
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation' // 의존성 추가
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -39,6 +47,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.h2database:h2' //
     testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
     
        // QueryDSL
     ext["querydslVersion"] = "7.5"
@@ -55,6 +64,12 @@ dependencies {
     compileOnly group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5'
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
+
+    // cache
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
  
     

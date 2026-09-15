@@ -11,9 +11,13 @@ public record OrderItemResponse(
         String productName,
         long unitPrice,
         int quantity,
-        long subTotal
+        // 주문 당시 단가 × 수량이며 쿠폰 할인 배분액은 빼지 않은 금액이다.
+        long subTotal,
+        // 주문 전체 쿠폰 할인액 중 이 항목에 배분된 몫이다. 주문 시점에 저장된 값이며 이벤트 항목은 0이다.
+        long couponDiscountShare,
+        // subTotal에서 couponDiscountShare를 뺀 이 항목의 실결제액이다. 부분 환불 금액 계산의 기준이다.
+        long paidAmount
 ) {
-    // 소계는 주문 당시 단가 × 수량이며 주문 전체의 쿠폰 할인 배분액은 포함하지 않는다.
     public static OrderItemResponse from(OrderItem orderItem) {
         return new OrderItemResponse(
                 orderItem.getId(),
@@ -22,7 +26,9 @@ public record OrderItemResponse(
                 orderItem.getProductName(),
                 orderItem.getUnitPrice(),
                 orderItem.getQuantity(),
-                orderItem.getSubTotal()
+                orderItem.getSubTotal(),
+                orderItem.getCouponDiscountShare(),
+                orderItem.getPaidAmount()
         );
     }
 }

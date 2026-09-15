@@ -2,15 +2,20 @@ package com.example.commerce.domain.product.service;
 
 import com.example.commerce.common.exception.BusinessException;
 import com.example.commerce.common.exception.ErrorCode;
+import com.example.commerce.domain.event.entity.Event;
+import com.example.commerce.domain.event.service.EventService;
 import com.example.commerce.domain.product.dto.ProductResponse;
 import com.example.commerce.domain.product.dto.SearchProductRequest;
 import com.example.commerce.domain.product.entity.Product;
 import com.example.commerce.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -18,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final EventService eventService;
+    private final ProductViewCountManager viewCountManager;
+
     @Transactional(readOnly = true)
     public Page<ProductResponse> searchProduct(SearchProductRequest request, Pageable pageable) {
         validateSearchCondition(request);
@@ -29,15 +37,16 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        product.increaseViewCount();
+        viewCountManager.increase(id);   // 엔티티 메서드 대신 벌크 업데이트
 
-        return ProductResponse.from(product);
+        Event activeEvent = eventService.findActiveEvent(id).orElse(null);
+
+        return ProductResponse.of(product, activeEvent);
     }
 
+    @Cacheable(value = "popularProducts", key = "#pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<ProductResponse> getPopularProducts(Pageable pageable) {
-        return productRepository
-                .findAllByOrderByViewCountDesc(pageable)
-                .map(ProductResponse::from);
+        return productRepository.findPopularProducts(pageable);
     }
 
     private void validateSearchCondition(SearchProductRequest request) {
@@ -53,5 +62,10 @@ public class ProductService {
                 && request.minPrice() > request.maxPrice()) {
             throw new BusinessException(ErrorCode.PRICE_ERROR);
         }
+    }
+
+    public Product findProduct(Long productId) {
+        return productRepository.findById(productId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 }
