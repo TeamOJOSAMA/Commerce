@@ -5,7 +5,8 @@ import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
-import com.example.commerce.domain.coupon.dto.CreateUserCouponResponse;
+import com.example.commerce.domain.coupon.dto.SearchUserCouponRequest;
+import com.example.commerce.domain.coupon.dto.UserCouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
@@ -96,7 +97,7 @@ public class CouponController {
     }
 
     @PostMapping("/coupons/{couponId}/issue")
-    public ResponseEntity<ApiResponse<CreateUserCouponResponse>> createUserCoupon(
+    public ResponseEntity<ApiResponse<UserCouponResponse>> createUserCoupon(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Long couponId
     ) {
@@ -107,5 +108,19 @@ public class CouponController {
                                 "쿠폰을 발급했습니다.",
                                 couponFacade.createUserCoupon(authUser.getUserId(), couponId)
                         ));
+    }
+
+    @GetMapping("/users/me/coupons")
+    public ResponseEntity<ApiResponse<PageResponse<UserCouponResponse>>> getUserCoupons(
+            @AuthenticationPrincipal AuthUser authuser,
+            Pageable pageable,
+            @ModelAttribute SearchUserCouponRequest request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "내 쿠폰을 조회했습니다.",
+                        couponService.getUserCoupons(authuser.getUserId(), pageable, request)
+                )
+        );
     }
 }

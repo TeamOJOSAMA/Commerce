@@ -1,6 +1,6 @@
 package com.example.commerce.domain.coupon.facade;
 
-import com.example.commerce.domain.coupon.dto.CreateUserCouponResponse;
+import com.example.commerce.domain.coupon.dto.UserCouponResponse;
 import com.example.commerce.domain.coupon.service.CouponService;
 import com.example.commerce.domain.user.entity.User;
 import com.example.commerce.domain.user.service.UserService;
@@ -18,7 +18,7 @@ public class CouponFacade {
     private final CouponService couponService;
 
     @Transactional
-    public CreateUserCouponResponse createUserCoupon(Long userId, Long couponId) {
+    public UserCouponResponse createUserCoupon(Long userId, Long couponId) {
 
         // 요청 userId에 해당하는 회원이 UserRepository에 있는가
         User user = userService.findUser(userId); // 없다면 404

@@ -5,7 +5,8 @@ import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
-import com.example.commerce.domain.coupon.dto.CreateUserCouponResponse;
+import com.example.commerce.domain.coupon.dto.SearchUserCouponRequest;
+import com.example.commerce.domain.coupon.dto.UserCouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
@@ -147,7 +148,7 @@ public class CouponService {
 
     /** 쿠폰 발급 (Facade로 감싸짐) */
     @Transactional
-    public CreateUserCouponResponse createUserCoupon(User user, Long couponId) {
+    public UserCouponResponse createUserCoupon(User user, Long couponId) {
 
         // 발급 대상 찾기 (비관적 락 적용됨)
         Coupon coupon = couponRepository.findByIdForUpdate(couponId)
@@ -164,10 +165,19 @@ public class CouponService {
         UserCoupon userCoupon = new UserCoupon(user, coupon);
         userCouponRepository.save(userCoupon);
 
-        return CreateUserCouponResponse.from(userCoupon);
+        return UserCouponResponse.from(userCoupon);
     }
 
     /** 내 쿠폰 조회 */
+    public PageResponse<UserCouponResponse> getUserCoupons(
+            Long userId,
+            Pageable pageable,
+            SearchUserCouponRequest request
+    ) {
+        Page<UserCouponResponse> page = userCouponRepository.searchUserCoupons(userId, pageable, request);
+
+        return PageResponse.from(page);
+    }
 
     // 조회용 계산이며 쿠폰 상태를 변경하지 않는다.
     public long calculateDiscount(Long userId, Long userCouponId, long couponEligibleAmount) {

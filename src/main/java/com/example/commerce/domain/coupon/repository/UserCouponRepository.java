@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
+public interface UserCouponRepository extends JpaRepository<UserCoupon, Long>, UserCouponRepositoryCustom {
 
     // 조회용 할인 계산에서 원본 쿠폰의 할인 정책도 함께 가져온다.
     @EntityGraph(attributePaths = "coupon")
