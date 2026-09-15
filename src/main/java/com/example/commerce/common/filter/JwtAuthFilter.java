@@ -37,8 +37,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/swagger-ui.html",
             "/v3/api-docs",
             "/api/auth",
-            "/ws-stomp",
-            "/ws-echo",
+            "/api/ws-stomp",
+            "/api/ws-echo",
             "/actuator/health"
     );
 
@@ -54,7 +54,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             return;
         }
-
 
         String bearerJwt = request.getHeader("Authorization");
         if (bearerJwt == null) {

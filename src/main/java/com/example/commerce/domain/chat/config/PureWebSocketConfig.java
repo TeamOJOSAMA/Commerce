@@ -12,11 +12,13 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @RequiredArgsConstructor
 public class PureWebSocketConfig implements WebSocketConfigurer {
 
+    private static final String ECHO_ENDPOINT = "/api/ws-echo";
+
     private final EchoWebSocketHandler echoWebSocketHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(echoWebSocketHandler, "/ws-echo")
+        registry.addHandler(echoWebSocketHandler, ECHO_ENDPOINT)
                 .setAllowedOriginPatterns("*");
     }
 }

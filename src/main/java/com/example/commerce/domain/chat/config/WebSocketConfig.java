@@ -1,6 +1,8 @@
 package com.example.commerce.domain.chat.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -8,12 +10,15 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final String STOMP_ENDPOINT = "/ws-stomp";
+    private static final String STOMP_ENDPOINT = "/api/ws-stomp";
     private static final String SUBSCRIBE_PREFIX = "/sub";
     private static final String PUBLISH_PREFIX = "/pub";
     private static final String USER_PREFIX = "/user";
+
+    private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -32,5 +37,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // 특정 사용자에게만 보낼 때 사용하는 prefix
         registry.setUserDestinationPrefix(USER_PREFIX);
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompAuthChannelInterceptor);
     }
 }
