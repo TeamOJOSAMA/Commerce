@@ -389,17 +389,19 @@ public class OrderFacade {
      * 상품 상태와 적용 이벤트로 주문 항목을 만든다. 생성과 미리보기가 같은 규칙을 쓰도록 한 곳에 모았다.
      * 구매할 수 없는 상품은 예외 대신 사유를 담은 결과로 돌려주고, 거부 여부는 호출자가 결정한다.
      * 이후 상품 정보가 바뀌어도 주문 가격이 바뀌지 않도록 ID·이름·단가·수량을 복사한다.
+     *
+     * <p>이벤트 가격은 ACTIVE이면서 기간 안에 있는 이벤트가 있을 때만 적용한다. 상태가 ON_EVENT라도 진행 중
+     * 이벤트가 없으면(종료 후 스케줄러가 상태를 되돌리기 전, 또는 시작 전) 정가의 일반 상품으로 주문한다.
+     * 이전에는 이 경우를 EVENT_NOT_IN_PROGRESS로 거부했는데, 이벤트 종료 직후 스케줄러가 돌기 전 최대 1분 동안
+     * 장바구니에 담아 둔 상품이 주문서에서 빠지고 주문이 실패했다(2026-09-15 변경).</p>
      */
     private ItemResolution resolveOrderItem(Product product, Integer quantity, Map<Long, Event> events) {
         Event event = null;
         if (product.getStatus() == ProductStatus.ON_EVENT) {
+            // 진행 중 이벤트가 없으면 null이 남아 아래에서 정가와 eventId = null로 항목을 만든다.
             event = events.get(product.getId());
-            if (event == null) {
-                // 상품 상태만 ON_EVENT여도 기간·상태 조건에 맞는 이벤트가 없으면 주문할 수 없다.
-                return ItemResolution.unavailable(OrderItemUnavailableReason.EVENT_NOT_IN_PROGRESS);
-            }
         } else if (product.getStatus() != ProductStatus.ON_SALE) {
-            // 일반 판매나 유효한 이벤트 판매 이외의 상품 상태는 주문 대상에서 제외한다.
+            // 일반 판매나 이벤트 판매 이외의 상품 상태는 주문 대상에서 제외한다.
             return ItemResolution.unavailable(product.getStatus() == ProductStatus.SOLDOUT
                     ? OrderItemUnavailableReason.SOLD_OUT
                     : OrderItemUnavailableReason.NOT_ON_SALE);
