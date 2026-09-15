@@ -8,7 +8,7 @@ COPY src src
 RUN ./gradlew bootJar -x test --no-daemon
 
 # 2단계: 실행 (빌드 산물만 가져와서 이미지 용량 줄임)
-FROM eclipse-temurin:17-jre-alpine
+FROM amazoncorretto:17-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080

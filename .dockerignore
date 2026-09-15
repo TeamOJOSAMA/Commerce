@@ -1,0 +1,46 @@
+# Dockerfile이 COPY하는 것은 gradlew, gradle/, build.gradle, settings.gradle, src/ 뿐이다.
+# 그 외는 빌드 컨텍스트에서 제외해 전송량을 줄이고, 비밀값이 빌드 컨텍스트로 새지 않게 한다.
+# 주의: gradle/ (래퍼)는 제외하면 안 된다. .gradle/ (캐시)와 다른 디렉터리다.
+
+# 버전 관리
+.git
+.gitignore
+.gitattributes
+
+# 빌드 산출물·캐시 (이미지 안에서 새로 빌드한다)
+.gradle
+build
+out
+bin
+
+# IDE
+.idea
+*.iml
+*.iws
+*.ipr
+.vscode
+.settings
+.classpath
+.project
+.factorypath
+
+# 환경변수·비밀값 (compose가 런타임에 주입한다)
+.env
+.env.*
+
+# 문서·도구 설정 (이미지에 필요 없다)
+docs
+*.md
+.mcp.json
+.claude
+Dockerfile
+docker-compose*.yml
+docker-compose*.yaml
+
+# 테스트 소스: bootJar -x test라 이미지 빌드에 쓰이지 않는다.
+# 제외해 두면 테스트만 바꾼 커밋이 COPY src 레이어 캐시를 깨지 않는다.
+src/test
+
+# 기타
+*.log
+.DS_Store

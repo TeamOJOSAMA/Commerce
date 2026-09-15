@@ -16,7 +16,7 @@ import java.util.List;
 import static com.example.commerce.domain.event.entity.QEvent.event;
 
 @RequiredArgsConstructor
-public class EventCustomImpl implements EventCustomRepository {
+public class EventCustomRepositoryImpl implements EventCustomRepository {
 
     private final JPAQueryFactory queryFactory;
 
