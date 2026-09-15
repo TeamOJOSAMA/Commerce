@@ -42,6 +42,12 @@ public class EventService {
 
     }
 
+    @Transactional
+    public void endActiveEvent(Long productId) {
+        eventRepository.findByProduct_IdAndStatus(productId, EventStatus.ACTIVE
+        ).ifPresent(Event::end);
+    }
+
     @Transactional(readOnly = true)
     public Page<EventResponse> getEvents(EventStatus status, Pageable pageable) {
         return eventRepository.searchEvents(status, pageable);
