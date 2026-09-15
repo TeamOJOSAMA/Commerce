@@ -13,9 +13,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+// 한 결제(payment)에 여러 건의 부분 환불이 있을 수 있다. 중복/초과 환불 방지는
+// RefundService가 주문 항목별 already-refunded 수량을 집계해 검증한다.
 @Entity
-@Table(name = "refunds", uniqueConstraints = @UniqueConstraint(
-        name = "uk_refund_payment_id", columnNames = "payment_id")) // 한 결제당 환불 1건 DB 강제
+@Table(name = "refunds")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Refund  extends BaseEntity {
