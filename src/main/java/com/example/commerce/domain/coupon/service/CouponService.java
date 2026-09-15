@@ -101,6 +101,9 @@ public class CouponService {
 
         validateDiscountPolicy(coupon);
 
+        // updatedAt이 응답 생성 전에 갱신되도록 반영
+        couponRepository.flush();
+
         return UpdateCouponResponse.from(coupon);
     }
 
