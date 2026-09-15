@@ -1,0 +1,21 @@
+-- 기타(OTHER) 카테고리 20개 상품의 대표이미지 - 전부 로컬 실사 이미지(commerce-frontend/public/products/기타/)
+UPDATE products SET image_url = '/products/기타/3단 우산.png' WHERE name = '3단 접이식 우산' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/장우산.png' WHERE name = '자동 장우산' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/케리어.png' WHERE name = '캐리어 20인치' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/백팩.png' WHERE name = '데일리 백팩' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/크로스백.png' WHERE name = '크로스백' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/썬그리.png' WHERE name = '편광 선글라스' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/손목시계.png' WHERE name = '손목시계' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/반지갑.png' WHERE name = '가죽 반지갑' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/복베개.png' WHERE name = '메모리폼 목베개' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/텀블러.png' WHERE name = '보온보냉 텀블러' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/보조가방.png' WHERE name = '보조가방' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/차량용방향제.png' WHERE name = '차량용 방향제' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/미니선풍기.png' WHERE name = '휴대용 미니 선풍기' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/휴대용손전등.png' WHERE name = '무선 휴대용 조명' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/캠핑랜턴.png' WHERE name = '캠핑용 랜턴' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/접이식카트.png' WHERE name = '접이식 쇼핑카트' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/멀티탭.png' WHERE name = '멀티탭 세트' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/거치대.png' WHERE name = '휴대폰 거치대' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/차량충전기.png' WHERE name = '차량용 고속충전기' AND category = 'OTHER';
+UPDATE products SET image_url = '/products/기타/미니가습기.png' WHERE name = '미니 가습기' AND category = 'OTHER';
