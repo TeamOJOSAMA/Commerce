@@ -5,6 +5,8 @@ import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
+import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
+import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
 import com.example.commerce.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,19 @@ public class CouponController {
                         .ok(
                                 "모든 쿠폰을 열람했습니다.",
                                 couponService.getAllCoupons(pageable, request)
+                        ));
+    }
+
+    @PatchMapping("/admin/coupons/{couponId}")
+    public ResponseEntity<ApiResponse<UpdateCouponResponse>> updateCoupon(
+            @PathVariable("couponId") Long couponId,
+            @Valid @RequestBody UpdateCouponRequest request
+    ) {
+        return ResponseEntity
+                .ok(ApiResponse
+                        .ok(
+                                "쿠폰 정보를 수정했습니다.",
+                                couponService.updateCoupon(couponId, request)
                         ));
     }
 

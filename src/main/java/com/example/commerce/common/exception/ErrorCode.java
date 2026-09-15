@@ -45,10 +45,13 @@ public enum ErrorCode {
     USER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPON_001", "사용자의 발급 쿠폰을 찾을 수 없습니다."),
     USER_COUPON_UNAVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_002", "사용 가능한 상태의 쿠폰이 아닙니다."),
     USER_COUPON_EXPIRED(HttpStatus.BAD_REQUEST, "COUPON_003", "사용 기간이 만료된 쿠폰입니다."),
-    COUPON_INACTIVE(HttpStatus.BAD_REQUEST, "COUPON_004", "활성 상태의 쿠폰이 아닙니다."),
-    COUPON_MINIMUM_AMOUNT_NOT_MET(HttpStatus.BAD_REQUEST, "COUPON_005", "쿠폰 적용 대상 금액이 최소 주문 금액보다 적습니다."),
-    INVALID_COUPON_POLICY(HttpStatus.BAD_REQUEST, "COUPON_006", "쿠폰 할인 정책이 올바르지 않습니다."),
-    INVALID_COUPON_ELIGIBLE_AMOUNT(HttpStatus.BAD_REQUEST, "COUPON_007", "쿠폰 적용 대상 금액은 0 이상이어야 합니다."),
+    COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "COUPON_004", "쿠폰을 찾을 수 없습니다."),
+    COUPON_INACTIVE(HttpStatus.BAD_REQUEST, "COUPON_005", "활성 상태의 쿠폰이 아닙니다."),
+    COUPON_MINIMUM_AMOUNT_NOT_MET(HttpStatus.BAD_REQUEST, "COUPON_006", "쿠폰 적용 대상 금액이 최소 주문 금액보다 적습니다."),
+    INVALID_COUPON_POLICY(HttpStatus.BAD_REQUEST, "COUPON_007", "쿠폰 할인 정책이 올바르지 않습니다."),
+    INVALID_COUPON_ELIGIBLE_AMOUNT(HttpStatus.BAD_REQUEST, "COUPON_008", "쿠폰 적용 대상 금액은 0 이상이어야 합니다."),
+    INVALID_COUPON_STATUS(HttpStatus.BAD_REQUEST, "COUPON_009", "처리할 수 없는 쿠폰 상태입니다."),
+    INVALID_COUPON_QUANTITY(HttpStatus.BAD_REQUEST, "COUPON_010", "전체 쿠폰 수량은 이미 발급된 수량보다 작을 수 없습니다."),
 
     // 주문
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_001","주문을 찾을 수 없습니다."),

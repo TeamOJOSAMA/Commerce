@@ -6,6 +6,8 @@ import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
+import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
+import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
 import com.example.commerce.domain.coupon.entity.Coupon;
 import com.example.commerce.domain.coupon.entity.CouponStatus;
 import com.example.commerce.domain.coupon.entity.UserCoupon;
@@ -36,7 +38,7 @@ public class CouponService {
     private final CouponRepository couponRepository;
     private final UserCouponRepository userCouponRepository;
 
-    // 쿠폰 정책 생성
+    /** 쿠폰 정책 생성 (관리자 전용) */
     @Transactional
     public CouponResponse createCoupon(CreateCouponRequest request) {
         Coupon coupon = new Coupon(
@@ -54,13 +56,64 @@ public class CouponService {
         return CouponResponse.from(savedCoupon);
     }
 
-    // 쿠폰 전체 조회 (관리자만 가능)
+    /** 쿠폰 전체 조회 (관리자 전용) */
     public PageResponse<CouponResponse> getAllCoupons(Pageable pageable, SearchCouponRequest request) {
 
         Page<CouponResponse> page = couponRepository.searchCouponByConditionPage(pageable, request);
 
         return PageResponse.from(page);
     }
+
+    /** 쿠폰 정보 변경 (관리자 전용) */
+    @Transactional
+    public UpdateCouponResponse updateCoupon(Long couponId, UpdateCouponRequest request) {
+
+        // 변경 대상 찾기
+        Coupon coupon = couponRepository.findById(couponId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+
+        // 요청값이 있는대로 각각 변경
+        if (request.name() != null)
+            coupon.updateName(request.name());
+
+        if (request.discountRate() != null)
+            coupon.updateDiscountRate(request.discountRate());
+
+        if (request.minimumOrderAmount() != null)
+            coupon.updateMinimumOrderAmount(request.minimumOrderAmount());
+
+        if (request.maximumDiscountAmount() != null)
+            coupon.updateMaximumDiscountAmount(request.maximumDiscountAmount());
+
+        if (request.totalQuantity() != null)
+            coupon.updateTotalQuantity(request.totalQuantity());
+
+        if (request.status() != null) {
+            if (request.status().equals(CouponStatus.ACTIVE))
+                coupon.activeCoupon();
+            else if (request.status().equals(CouponStatus.INACTIVE))
+                coupon.inactiveCoupon();
+            else
+                throw new BusinessException(ErrorCode.INVALID_COUPON_STATUS);
+        }
+
+        // Dirty Checking...
+
+        validateDiscountPolicy(coupon);
+
+        // updatedAt이 응답 생성 전에 갱신되도록 반영
+        couponRepository.flush();
+
+        return UpdateCouponResponse.from(coupon);
+    }
+
+    /** 쿠폰 정책 삭제 (관리자 전용) */
+
+    /** 활성 쿠폰 조회 */
+
+    /** 쿠폰 발급 */
+
+    /** 내 쿠폰 조회 */
 
     // 조회용 계산이며 쿠폰 상태를 변경하지 않는다.
     public long calculateDiscount(Long userId, Long userCouponId, long couponEligibleAmount) {
