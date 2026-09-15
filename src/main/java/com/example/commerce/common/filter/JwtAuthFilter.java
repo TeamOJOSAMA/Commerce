@@ -32,6 +32,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // 인증 없이 통과시킬 경로
     // WebSocket 핸드셰이크는 헤더에 토큰을 실을 수 없어 STOMP CONNECT 시점에 인증한다
     private static final List<String> PERMITTED_PATH_PREFIXES = List.of(
+            "/swagger-ui/",
+            "/swagger-ui.html",
+            "/v3/api-docs",
             "/api/auth",
             "/ws-stomp",
             "/ws-echo",
