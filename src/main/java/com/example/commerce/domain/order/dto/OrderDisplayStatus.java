@@ -16,9 +16,10 @@ import com.example.commerce.domain.refund.entity.RefundStatus;
  * {@link OrderCancelReason}이 들고 있으므로 {@code PaymentStatus}로만 알 수 있는 것이 남지 않는다.
  * 결제 금액·승인 시각 같은 결제 자체의 내역은 {@code GET /api/payments/{paymentId}}가 답한다.</p>
  *
- * <p>부분 환불은 결제당 한 건만 허용한다는 전제 위에 있다. 여러 건을 허용하면 환불 상태가 단일 값이
- * 아니게 되고 누적 금액 비교가 필요해져 이 파생이 성립하지 않는다. 그때 무엇이 바뀌는지는
- * {@code docs/refund-multiple-partial-todo.md}에 정리해 두었다.</p>
+ * <p>한 결제에 여러 건의 부분 환불이 쌓일 수 있어({@link com.example.commerce.domain.refund.service.RefundService})
+ * {@code refundStatus}는 그중 최신 한 건의 상태만 받는다. 그래서 {@code PARTIALLY_REFUNDED}는
+ * "완료된 환불이 최소 한 건 있다"는 뜻일 뿐, "더 이상 환불할 항목이 없다"는 뜻이 아니다. 항목별로
+ * 아직 환불 가능한 수량이 남아 있는지는 {@link OrderItemResponse#refundedQuantity()}로 화면이 직접 계산한다.</p>
  */
 public enum OrderDisplayStatus {
 

@@ -20,9 +20,13 @@ public record OrderItemResponse(
         // 주문 전체 쿠폰 할인액 중 이 항목에 배분된 몫이다. 주문 시점에 저장된 값이며 이벤트 항목은 0이다.
         long couponDiscountShare,
         // subTotal에서 couponDiscountShare를 뺀 이 항목의 실결제액이다. 부분 환불 금액 계산의 기준이다.
-        long paidAmount
+        long paidAmount,
+        // 지금까지 이 항목에 걸린(요청+완료 불문) 환불 수량이다. quantity에서 이 값을 뺀 만큼만
+        // 추가로 환불 요청할 수 있다. 환불 이력이 없으면 0이다.
+        int refundedQuantity
 ) {
-    public static OrderItemResponse from(OrderItem orderItem, Long originalPrice, Integer discountRate) {
+    public static OrderItemResponse from(OrderItem orderItem, Long originalPrice, Integer discountRate,
+                                          int refundedQuantity) {
         return new OrderItemResponse(
                 orderItem.getId(),
                 orderItem.getProductId(),
@@ -34,7 +38,8 @@ public record OrderItemResponse(
                 orderItem.getQuantity(),
                 orderItem.getSubTotal(),
                 orderItem.getCouponDiscountShare(),
-                orderItem.getPaidAmount()
+                orderItem.getPaidAmount(),
+                refundedQuantity
         );
     }
 }
