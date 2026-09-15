@@ -139,6 +139,10 @@ public class Coupon extends BaseEntity {
         if (issuedQuantity >= totalQuantity)
             throw new BusinessException(ErrorCode.COUPON_SOLD_OUT);
 
+        // 스케줄러 실행 전이라도 발급 종료 시각이 지났다면 발급을 거부
+        if (!LocalDateTime.now().isBefore(issueEndsAt))
+            throw new BusinessException(ErrorCode.COUPON_NOT_ACTIVE);
+
         // 발급 수량 증가
         issuedQuantity++;
     }

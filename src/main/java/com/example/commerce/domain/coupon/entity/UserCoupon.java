@@ -83,10 +83,6 @@ public class UserCoupon extends BaseEntity {
         this.usedAt = LocalDateTime.now();
     }
 
-    public void expiredUserCoupon() {
-        this.status = UserCouponStatus.EXPIRED;
-    }
-
     // 대기 주문 취소에 사용하는 예약 해제이며, USED 쿠폰의 환불 복구와는 구분한다.
     public void release(LocalDateTime now) {
         // 주문의 상태 검사와 재취소 방지는 호출 서비스가 담당한다.
