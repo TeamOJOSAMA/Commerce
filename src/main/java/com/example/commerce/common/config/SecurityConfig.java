@@ -36,6 +36,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**").permitAll()
+                        // 배포 health check
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         // 정적 테스트 페이지 (개발용, 배포 전 제거)
                         .requestMatchers("/*.html").permitAll()
                         // WebSocket 핸드셰이크. 인증은 STOMP CONNECT 시점에 ChannelInterceptor 에서 처리
