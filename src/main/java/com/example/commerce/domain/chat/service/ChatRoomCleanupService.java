@@ -21,7 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 봇 응대 중인 채팅방이 일정 시간 방치되면 자동으로 종료한다
+// 봇 응대 중인 채팅방이 일정 시간 방치되면 자동으로 종료한다.
+// closeIdleChatRooms() 자체에 @Transactional을 붙여, 스케줄러 호출이 프록시를 거쳐
+// 트랜잭션을 연 상태에서 내부적으로 closeAndNotify를 this::로 호출하게 한다.
+// (self-invocation이어도 이미 열린 트랜잭션에 참여하므로 영속성 컨텍스트가 유지된다.)
+// 단, 유휴 방 전체가 하나의 트랜잭션으로 묶이므로 한 방 처리 중 예외가 나면
+// 그 배치의 나머지 방 처리도 함께 롤백된다.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -42,6 +47,7 @@ public class ChatRoomCleanupService {
     @Value("${chat.idle-timeout-minutes}")
     private long idleTimeoutMinutes;
 
+    @Transactional
     @Scheduled(fixedDelayString = "${chat.cleanup-interval-ms}")
     public void closeIdleChatRooms() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(idleTimeoutMinutes);
@@ -50,8 +56,7 @@ public class ChatRoomCleanupService {
         idleChatRoomIds.forEach(this::closeAndNotify);
     }
 
-    @Transactional
-    public void closeAndNotify(Long chatRoomId) {
+    private void closeAndNotify(Long chatRoomId) {
         ChatRoom chatRoom = getChatRoom(chatRoomId);
         User bot = getBotUser();
 
