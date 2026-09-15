@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// 봇 응대 중인 채팅방이 일정 시간 방치되면 자동으로 종료함
+// 봇 응대 중인 채팅방이 일정 시간 방치되면 자동으로 종료한다
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -45,7 +45,7 @@ public class ChatRoomCleanupService {
     @Scheduled(fixedDelayString = "${chat.cleanup-interval-ms}")
     public void closeIdleChatRooms() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(idleTimeoutMinutes);
-        List<Long> idleChatRoomIds = chatMessageRepository.findIdleChatRoomIds(threshold);
+        List<Long> idleChatRoomIds = chatRoomRepository.findIdleChatRoomIds(threshold);
 
         idleChatRoomIds.forEach(this::closeAndNotify);
     }
