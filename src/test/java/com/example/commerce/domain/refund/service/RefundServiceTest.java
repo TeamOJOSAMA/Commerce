@@ -8,7 +8,9 @@ import com.example.commerce.domain.payment.entity.Payment;
 import com.example.commerce.domain.payment.repository.PaymentRepository;
 import com.example.commerce.domain.refund.dto.RefundRequest;
 import com.example.commerce.domain.refund.entity.Refund;
+import com.example.commerce.domain.refund.entity.RefundItem;
 import com.example.commerce.domain.refund.entity.RefundType;
+import com.example.commerce.domain.refund.repository.RefundItemRepository;
 import com.example.commerce.domain.refund.repository.RefundRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +40,7 @@ class RefundServiceTest {
     private static final long OTHER_USER_ID = 200L;
 
     @Mock private RefundRepository refundRepository;
+    @Mock private RefundItemRepository refundItemRepository;
     @Mock private PaymentRepository paymentRepository;
     @Mock private Payment payment;
     @Mock private Order order;
@@ -61,8 +64,9 @@ class RefundServiceTest {
         lenient().when(orderItemB.getQuantity()).thenReturn(1);
         lenient().when(orderItemB.getPaidAmount()).thenReturn(2_700L);
 
-lenient().when(paymentRepository.findByIdForUpdate(PAYMENT_ID)).thenReturn(Optional.of(payment));
-lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false);
+        lenient().when(paymentRepository.findByIdForUpdate(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        // 기본값: 아직 환불된 수량 없음. 개별 테스트가 필요하면 재정의한다.
+        lenient().when(refundItemRepository.findAllByOrderItem_IdIn(any())).thenReturn(List.of());
         lenient().when(refundRepository.saveAndFlush(any(Refund.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
     }
@@ -120,14 +124,50 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     }
 
     @Test
-    @DisplayName("이미 환불된 결제 - REFUND_NOT_ALLOWED")
-    void createRefund_alreadyRefunded() {
-        given(refundRepository.existsByPaymentId(PAYMENT_ID)).willReturn(true);
+    @DisplayName("이미 전 항목이 환불된 결제 - 전액 환불 재요청은 REFUND_NOT_ALLOWED")
+    void createRefund_alreadyFullyRefunded() {
+        List<RefundItem> alreadyRefunded = List.of(new RefundItem(orderItemA, 2), new RefundItem(orderItemB, 1));
+        given(refundItemRepository.findAllByOrderItem_IdIn(any())).willReturn(alreadyRefunded);
 
         assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, new RefundRequest(PAYMENT_ID, RefundType.FULL, "x", null)))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException)e).getErrorCode())
                 .isEqualTo(ErrorCode.REFUND_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("부분 환불을 시점을 나눠 여러 번 요청할 수 있다 - 첫 요청에서 남은 만큼만 환불하면 두 번째 요청도 허용")
+    void createRefund_partial_canRepeatAfterPreviousPartialRefund() {
+        // itemA는 수량 2 중 1개가 이미 환불된 상태
+        List<RefundItem> alreadyRefunded = List.of(new RefundItem(orderItemA, 1));
+        given(refundItemRepository.findAllByOrderItem_IdIn(any())).willReturn(alreadyRefunded);
+
+        var request = new RefundRequest(PAYMENT_ID, RefundType.PARTIAL, "나머지도 반품",
+                List.of(new RefundRequest.Item(ITEM_A_ID, 1)));
+
+        var response = refundService.createRefund(OWNER_ID, request);
+
+        assertThat(response.items()).singleElement()
+                .satisfies(i -> {
+                    assertThat(i.orderItemId()).isEqualTo(ITEM_A_ID);
+                    assertThat(i.quantity()).isEqualTo(1);
+                });
+    }
+
+    @Test
+    @DisplayName("부분 환불 - 이미 환불된 수량을 감안한 잔여 수량을 초과하면 REFUND_ITEM_NOT_FOUND")
+    void createRefund_partial_exceedsRemainingAfterPreviousRefund() {
+        // itemA는 수량 2 중 1개가 이미 환불된 상태라 남은 건 1개뿐
+        List<RefundItem> alreadyRefunded = List.of(new RefundItem(orderItemA, 1));
+        given(refundItemRepository.findAllByOrderItem_IdIn(any())).willReturn(alreadyRefunded);
+
+        var request = new RefundRequest(PAYMENT_ID, RefundType.PARTIAL, "x",
+                List.of(new RefundRequest.Item(ITEM_A_ID, 2)));
+
+        assertThatThrownBy(() -> refundService.createRefund(OWNER_ID, request))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException)e).getErrorCode())
+                .isEqualTo(ErrorCode.REFUND_ITEM_NOT_FOUND);
     }
 
     @Test
