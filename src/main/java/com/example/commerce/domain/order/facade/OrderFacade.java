@@ -306,7 +306,11 @@ public class OrderFacade {
                 : eventRepository.findAllById(eventIds).stream()
                         .collect(Collectors.toMap(Event::getId, Function.identity()));
 
-        return OrderResponse.from(order, payment, refund, productsById, eventsById);
+        // 항목별로 지금까지 걸린 환불 수량을 함께 내려줘서, 화면이 "얼마나 더 환불할 수 있는지" 계산하게 한다.
+        Map<Long, Integer> refundedQuantityByOrderItemId = refundService.getRefundedQuantityByOrderItemIds(
+                order.getOrderItems().stream().map(OrderItem::getId).toList());
+
+        return OrderResponse.from(order, payment, refund, productsById, eventsById, refundedQuantityByOrderItemId);
     }
 
     /** 미결제 주문의 재고 복구, 결제 실패 처리, 쿠폰 예약 해제를 함께 커밋한다. */

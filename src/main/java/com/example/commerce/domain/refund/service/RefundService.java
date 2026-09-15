@@ -68,6 +68,21 @@ public class RefundService {
         return latestRefundByPaymentId;
     }
 
+    // 주문 상세 조립용 내부 조회다. 주문 항목별로 지금까지 걸린(요청+완료 불문) 환불 수량을 돌려줘서,
+    // 화면이 "얼마나 더 환불할 수 있는지"를 계산할 수 있게 한다. createRefund()의 잔여 수량 검증과
+    // 같은 기준(getAlreadyRefundedQuantityByOrderItemId)을 쓴다.
+    public Map<Long, Integer> getRefundedQuantityByOrderItemIds(List<Long> orderItemIds) {
+        if (orderItemIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return refundItemRepository.findAllByOrderItem_IdIn(orderItemIds).stream()
+                .collect(Collectors.toMap(
+                        refundItem -> refundItem.getOrderItem().getId(),
+                        RefundItem::getQuantity,
+                        Integer::sum));
+    }
+
     @Transactional
     public RefundResponse completeRefund(Long userId, Long refundId) {
         Refund refund = refundRepository.findByIdForUpdate(refundId)
@@ -76,11 +91,13 @@ public class RefundService {
         validateOwner(refund.getPayment(), userId);
 
         refund.complete();
-        refund.getPayment().cancel();
 
-        // 전액 환불이면 주문 전체가 무효 그래서 주문도 취소
-        // 부분 환불은 남은 항목이 유효한 주문으로 남기때문에 주문 상태는 건드리지 않음
+        // 전액 환불이면 결제·주문이 전부 무효라 결제도 취소하고 주문도 취소한다.
+        // 부분 환불은 결제·주문 모두 유효하게 남아야, 남은 수량을 나중에 또 부분 환불할 수 있다.
+        // (예전엔 부분 환불도 결제를 CANCELED로 만들어 버려서, 두 번째 부분 환불이 validatePaid()에
+        // 걸려 항상 거부됐다 — 한 결제에 부분 환불을 여러 번 허용하면서 함께 고쳤다.)
         if (refund.getRefundType() == RefundType.FULL) {
+            refund.getPayment().cancel();
             cancelOrder(refund.getPayment().getOrder().getId());
         }
 
@@ -128,7 +145,8 @@ public class RefundService {
         validatePaid(payment);
 
         List<OrderItem> orderItems = payment.getOrder().getOrderItems();
-        Map<Long, Integer> alreadyRefundedQuantityByOrderItemId = getAlreadyRefundedQuantityByOrderItemId(orderItems);
+        Map<Long, Integer> alreadyRefundedQuantityByOrderItemId =
+                getRefundedQuantityByOrderItemIds(orderItems.stream().map(OrderItem::getId).toList());
         List<RefundItem> refundItems = buildRefundItems(refundRequest, orderItems, alreadyRefundedQuantityByOrderItemId);
 
         Refund refund = new Refund(payment, refundItems, refundRequest.reason(), refundRequest.refundType());
@@ -136,18 +154,6 @@ public class RefundService {
         Refund saved = refundRepository.saveAndFlush(refund);
         log.info("환불 요청 생성 - refundId: {}, paymentId: {}, type: {}", saved.getId(), payment.getId(), refundRequest.refundType());
         return RefundResponse.from(saved);
-    }
-
-    // 주문 항목별로, 상태(REQUESTED/COMPLETED)를 가리지 않고 이미 걸려 있는 환불 수량을 합산한다.
-    // REQUESTED 단계부터 수량을 선점해야 완료 전에 같은 항목을 중복으로 또 요청하는 것을 막을 수 있다.
-    private Map<Long, Integer> getAlreadyRefundedQuantityByOrderItemId(List<OrderItem> orderItems) {
-        List<Long> orderItemIds = orderItems.stream().map(OrderItem::getId).toList();
-
-        return refundItemRepository.findAllByOrderItem_IdIn(orderItemIds).stream()
-                .collect(Collectors.toMap(
-                        refundItem -> refundItem.getOrderItem().getId(),
-                        RefundItem::getQuantity,
-                        Integer::sum));
     }
 
     private void validateOwner(Payment payment, Long userId) {

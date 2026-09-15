@@ -46,9 +46,12 @@ public record OrderResponse(
     // 결제·환불이 아직 없는 주문도 조회할 수 있도록 둘 다 nullable로 받는다.
     // productsById·eventsById는 상세/장바구니와 같은 취소선 표시를 위한 원가·할인율 조회용이며,
     // 이벤트가 적용되지 않은 항목만 있으면 비어 있는 맵을 넘겨도 된다.
+    // refundedQuantityByOrderItemId는 항목별로 지금까지 걸린 환불 수량이다. 호출자(OrderFacade)가
+    // RefundService에서 미리 조회해 넘긴다. 환불 이력이 없는 주문은 빈 맵을 넘기면 된다.
     public static OrderResponse from(
             Order order, Payment payment, Refund refund,
-            Map<Long, Product> productsById, Map<Long, Event> eventsById
+            Map<Long, Product> productsById, Map<Long, Event> eventsById,
+            Map<Long, Integer> refundedQuantityByOrderItemId
     ) {
         // 항목별 쿠폰 할인 배분액은 주문 생성 시 항목에 저장된 값을 그대로 읽는다. 화면과 부분 환불이 같은 값을 본다.
         return new OrderResponse(
@@ -58,7 +61,7 @@ public record OrderResponse(
                         refund == null ? null : refund.getStatus()),
                 order.getOrderName(),
                 order.getOrderItems().stream()
-                        .map(orderItem -> toItemResponse(orderItem, productsById, eventsById))
+                        .map(orderItem -> toItemResponse(orderItem, productsById, eventsById, refundedQuantityByOrderItemId))
                         .toList(),
                 order.getTotalQuantity(),
                 order.getTotalAmount(),
@@ -74,10 +77,13 @@ public record OrderResponse(
     }
 
     private static OrderItemResponse toItemResponse(
-            OrderItem orderItem, Map<Long, Product> productsById, Map<Long, Event> eventsById
+            OrderItem orderItem, Map<Long, Product> productsById, Map<Long, Event> eventsById,
+            Map<Long, Integer> refundedQuantityByOrderItemId
     ) {
+        int refundedQuantity = refundedQuantityByOrderItemId.getOrDefault(orderItem.getId(), 0);
+
         if (!orderItem.hasAppliedEvent()) {
-            return OrderItemResponse.from(orderItem, null, null);
+            return OrderItemResponse.from(orderItem, null, null, refundedQuantity);
         }
 
         Product product = productsById.get(orderItem.getProductId());
@@ -86,7 +92,8 @@ public record OrderResponse(
         return OrderItemResponse.from(
                 orderItem,
                 product == null ? null : product.getPrice(),
-                event == null ? null : event.getDiscountRate()
+                event == null ? null : event.getDiscountRate(),
+                refundedQuantity
         );
     }
 }
