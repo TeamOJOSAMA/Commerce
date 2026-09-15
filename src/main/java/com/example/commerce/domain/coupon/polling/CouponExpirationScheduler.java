@@ -1,4 +1,4 @@
-package com.example.commerce.domain.coupon.scheduler;
+package com.example.commerce.domain.coupon.polling;
 
 import com.example.commerce.domain.coupon.entity.CouponStatus;
 import com.example.commerce.domain.coupon.entity.UserCouponStatus;
@@ -24,11 +24,11 @@ public class CouponExpirationScheduler {
     private final UserCouponRepository userCouponRepository;
 
     /**
-     * 매분 만료 시각이 지난 쿠폰 정책과 사용자 쿠폰을 만료 처리한다.
+     * 매 10초간 만료 시각이 지난 쿠폰 정책과 사용자 쿠폰을 만료 처리한다.
      */
     @Transactional
     @Scheduled(
-            cron = "${coupon.expiration.cron:0 * * * * *}",
+            cron = "${coupon.expiration.cron:*/10 * * * * *}",
             zone = "Asia/Seoul"
     )
     public void expireCoupons() {
