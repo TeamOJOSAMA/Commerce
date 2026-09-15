@@ -5,7 +5,7 @@ import com.example.commerce.domain.coupon.entity.UserCouponStatus;
 
 import java.time.LocalDateTime;
 
-public record CreateUserCouponResponse(
+public record UserCouponResponse(
         Long userCouponId,
         Long couponId,
         String couponName,
@@ -18,8 +18,8 @@ public record CreateUserCouponResponse(
         LocalDateTime usedAt
 ) {
     // 쿠폰을 받는 주체가 회원이므로 UserCoupon을 인수로 받음
-    public static CreateUserCouponResponse from(UserCoupon userCoupon) {
-        return new CreateUserCouponResponse(
+    public static UserCouponResponse from(UserCoupon userCoupon) {
+        return new UserCouponResponse(
                 userCoupon.getId(),
                 userCoupon.getCoupon().getId(),
                 userCoupon.getCoupon().getName(),
