@@ -23,4 +23,7 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
 
     // 쿠폰 삭제 전 발급 이력 존재 여부 확인
     boolean existsByCouponId(Long couponId);
+
+    // 중복 발급 방지용
+    boolean existsByUserIdAndCouponId(Long userId, Long couponId);
 }

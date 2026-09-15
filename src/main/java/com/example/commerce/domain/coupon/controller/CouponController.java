@@ -2,17 +2,21 @@ package com.example.commerce.domain.coupon.controller;
 
 import com.example.commerce.common.response.ApiResponse;
 import com.example.commerce.common.response.PageResponse;
+import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
+import com.example.commerce.domain.coupon.dto.CreateUserCouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
+import com.example.commerce.domain.coupon.facade.CouponFacade;
 import com.example.commerce.domain.coupon.service.CouponService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CouponController {
 
     private final CouponService couponService;
+    private final CouponFacade couponFacade;
 
     @PostMapping("/admin/coupons")
     public ResponseEntity<ApiResponse<CouponResponse>> createCoupon(
@@ -90,11 +95,17 @@ public class CouponController {
         );
     }
 
-    // TODO: 쿠폰 발급 API 개발중
-//    @PostMapping("/coupons/{couponId}/issue")
-//    public ResponseEntity<ApiResponse<CreateUserCouponResponse>> createUserCoupon(
-//            @PathVariable Long couponId
-//    ) {
-//
-//    }
+    @PostMapping("/coupons/{couponId}/issue")
+    public ResponseEntity<ApiResponse<CreateUserCouponResponse>> createUserCoupon(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable Long couponId
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse
+                        .ok(
+                                "쿠폰을 발급했습니다.",
+                                couponFacade.createUserCoupon(authUser.getUserId(), couponId)
+                        ));
+    }
 }

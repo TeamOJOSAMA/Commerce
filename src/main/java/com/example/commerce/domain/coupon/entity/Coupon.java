@@ -124,4 +124,22 @@ public class Coupon extends BaseEntity {
 
         this.status = newStatus;
     }
+
+    /**
+     * 사용자에게 쿠폰을 발급한다.
+     * 상태와 남은 수량을 확인한 뒤 발급 수량을 증가시킨다.
+     */
+    public void issue() {
+
+        // 활성 상태의 쿠폰만 발급 가능
+        if (status != CouponStatus.ACTIVE)
+            throw new BusinessException(ErrorCode.COUPON_NOT_ACTIVE);
+
+        // 발급 수량이 전체 수량에 도달했다면 추가 발급 불가
+        if (issuedQuantity >= totalQuantity)
+            throw new BusinessException(ErrorCode.COUPON_SOLD_OUT);
+
+        // 발급 수량 증가
+        issuedQuantity++;
+    }
 }

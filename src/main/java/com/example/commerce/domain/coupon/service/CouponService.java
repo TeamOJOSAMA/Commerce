@@ -5,6 +5,7 @@ import com.example.commerce.common.exception.ErrorCode;
 import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.coupon.dto.CreateCouponRequest;
 import com.example.commerce.domain.coupon.dto.CouponResponse;
+import com.example.commerce.domain.coupon.dto.CreateUserCouponResponse;
 import com.example.commerce.domain.coupon.dto.SearchCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponRequest;
 import com.example.commerce.domain.coupon.dto.UpdateCouponResponse;
@@ -14,6 +15,7 @@ import com.example.commerce.domain.coupon.entity.UserCoupon;
 import com.example.commerce.domain.coupon.entity.UserCouponStatus;
 import com.example.commerce.domain.coupon.repository.CouponRepository;
 import com.example.commerce.domain.coupon.repository.UserCouponRepository;
+import com.example.commerce.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,8 +71,7 @@ public class CouponService {
     public UpdateCouponResponse updateCoupon(Long couponId, UpdateCouponRequest request) {
 
         // 변경 대상 찾기
-        Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+        Coupon coupon = findCoupon(couponId);
 
         // 요청값이 있는대로 각각 변경
         if (request.name() != null)
@@ -112,8 +113,7 @@ public class CouponService {
     public void deleteCoupon(Long couponId) {
 
         // 삭제 대상 찾기
-        Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+        Coupon coupon = findCoupon(couponId);
 
         // 쿠폰 상태가 비활성이어야만 삭제 가능
         if (coupon.getStatus() != CouponStatus.INACTIVE) {
@@ -145,7 +145,27 @@ public class CouponService {
         return PageResponse.from(page);
     }
 
-    /** 쿠폰 발급 */
+    /** 쿠폰 발급 (Facade로 감싸짐) */
+    @Transactional
+    public CreateUserCouponResponse createUserCoupon(User user, Long couponId) {
+
+        // 발급 대상 찾기 (비관적 락 적용됨)
+        Coupon coupon = couponRepository.findByIdForUpdate(couponId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
+
+        // 한 사용자는 동일한 쿠폰을 한 번만 발급받을 수 있음
+        if (userCouponRepository.existsByUserIdAndCouponId(user.getId(), couponId))
+            throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED_TO_USER);
+
+        // 쿠폰 상태와 재고를 검증하고 발급 수량 증가
+        coupon.issue();
+
+        // 사용자 쿠폰 생성 후 저장
+        UserCoupon userCoupon = new UserCoupon(user, coupon);
+        userCouponRepository.save(userCoupon);
+
+        return CreateUserCouponResponse.from(userCoupon);
+    }
 
     /** 내 쿠폰 조회 */
 
@@ -216,7 +236,7 @@ public class CouponService {
         // 발급 쿠폰이 유효해도 원본 쿠폰 정책이 비활성화되었다면 새 예약을 허용하지 않는다.
         Coupon coupon = userCoupon.getCoupon();
         if (coupon.getStatus() != CouponStatus.ACTIVE) {
-            throw new BusinessException(ErrorCode.COUPON_INACTIVE);
+            throw new BusinessException(ErrorCode.COUPON_NOT_ACTIVE);
         }
         validateDiscountPolicy(coupon);
 
@@ -252,5 +272,11 @@ public class CouponService {
         if (coupon.getMaximumDiscountAmount() != null && coupon.getMaximumDiscountAmount() < 0) {
             throw new BusinessException(ErrorCode.INVALID_COUPON_POLICY);
         }
+    }
+
+    // 대상 찾기
+    private Coupon findCoupon(Long couponId) {
+        return couponRepository.findById(couponId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
     }
 }
