@@ -34,7 +34,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final List<String> PERMITTED_PATH_PREFIXES = List.of(
             "/api/auth",
             "/ws-stomp",
-            "/ws-echo"
+            "/ws-echo",
+            "/actuator/health"
     );
 
     private static final String HTML_SUFFIX = ".html";
