@@ -4,7 +4,6 @@ import com.example.commerce.common.response.ApiResponse;
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.refund.dto.RefundRequest;
 import com.example.commerce.domain.refund.dto.RefundResponse;
-import com.example.commerce.domain.refund.repository.RefundRepository;
 import com.example.commerce.domain.refund.service.RefundService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
