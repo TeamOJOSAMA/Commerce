@@ -51,11 +51,20 @@ public class SellerProductService {
 
         validateOwnership(authUser, product);
 
+        ProductStatus oldStatus = product.getStatus();
+
+
         product.update(request.name(), request.description(), request.category(), request.price());
 
         if (request.status() != null) {
             applyStatus(product, request.status(), request.eventInfo());
+            if (oldStatus == ProductStatus.ON_EVENT
+                    && request.status() != ProductStatus.ON_EVENT) {
+
+                eventService.endActiveEvent(product.getId());
+            }
         }
+
 
         return UpdateProductResponse.from(product);
     }
