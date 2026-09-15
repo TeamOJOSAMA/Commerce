@@ -41,13 +41,6 @@ public class Product extends BaseEntity {
 
     private Long viewCount = 0L;
 
-    private Long eventPrice;
-
-    private Integer discountRate;
-
-    @Column(name = "current_event_id")
-    private Long currentEventId;
-
     public Product(Long sellerId, String name, String description,
                    ProductCategory category, Long price, int stock) {
         this.sellerId = sellerId;
@@ -74,6 +67,10 @@ public class Product extends BaseEntity {
         }
     }
 
+    public boolean isOwnedBy(Long sellerId) {
+        return this.sellerId.equals(sellerId);
+    }
+
     private void setStatus(ProductStatus nextStatus) {
         if (!this.status.canTransitTo(nextStatus)) {
             throw new BusinessException(ErrorCode.INVALID_PRODUCT_STATUS);
@@ -83,31 +80,14 @@ public class Product extends BaseEntity {
 
     public void sale() {
         setStatus(ProductStatus.ON_SALE);
-        clearEventInfo();
     }
 
     public void soldout() {
         setStatus(ProductStatus.SOLDOUT);
-        clearEventInfo();
     }
 
-    public void event(Long eventPrice, Integer discountRate, Long eventId) {
-        if (eventPrice == null || eventPrice <= 0 || eventPrice >= this.price) {
-            throw new BusinessException(ErrorCode.INVALID_EVENT_PRICE);
-        }
-        if (eventId == null) {
-            throw new IllegalArgumentException("eventId는 필수입니다.");
-        }
+    public void event() {
         setStatus(ProductStatus.ON_EVENT);
-        this.eventPrice = eventPrice;
-        this.discountRate = discountRate;
-        this.currentEventId = eventId;
-    }
-
-    private void clearEventInfo() {
-        this.eventPrice = null;
-        this.discountRate = null;
-        this.currentEventId = null;
     }
 
     public void decreaseStock(int quantity) {
@@ -129,9 +109,5 @@ public class Product extends BaseEntity {
 
     public void increaseViewCount() {
         this.viewCount++;
-    }
-
-    public boolean isOwnedBy(Long sellerId) {
-        return this.sellerId.equals(sellerId);
     }
 }

@@ -1,16 +1,19 @@
 package com.example.commerce.domain.order.controller;
 
 import com.example.commerce.common.response.ApiResponse;
+import com.example.commerce.common.response.PageResponse;
 import com.example.commerce.domain.auth.entity.AuthUser;
 import com.example.commerce.domain.order.dto.CreateOrderRequest;
 import com.example.commerce.domain.order.dto.CreateOrderResponse;
 import com.example.commerce.domain.order.dto.OrderPreviewResponse;
 import com.example.commerce.domain.order.dto.OrderResponse;
 import com.example.commerce.domain.order.dto.OrderSummaryResponse;
+import com.example.commerce.domain.order.entity.OrderCancelReason;
 import com.example.commerce.domain.order.facade.OrderFacade;
-import com.example.commerce.domain.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,18 +33,24 @@ import java.util.List;
 public class OrderController {
 
     private final OrderFacade orderFacade;
-    private final OrderService orderService;
 
+    // 쿠폰은 선택이다. 선택하면 서버가 할인액과 결제 예정 금액을 계산해 내려주고, 적용할 수 없으면 쿠폰 오류로 거부한다.
     @GetMapping("/preview")
     public ResponseEntity<ApiResponse<OrderPreviewResponse>> getOrderPreview(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam(value = "cartItemIds", required = false) List<Long> cartItemIds
+            @RequestParam(value = "cartItemIds", required = false) List<Long> cartItemIds,
+            @RequestParam(value = "userCouponId", required = false) Long userCouponId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderFacade.getOrderPreview(authUser.getUserId(), cartItemIds)
+                orderFacade.getOrderPreview(authUser.getUserId(), cartItemIds, userCouponId)
         ));
     }
 
+    /**
+     * 멱등성 키로 기존 주문을 그대로 돌려줄 때도 201을 반환한다.
+     * 같은 요청의 결과를 다시 주는 것이므로 상태 코드를 나누지 않고,
+     * 응답의 status로 그 주문이 아직 결제 가능한지를 구분하게 한다.
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
             @AuthenticationPrincipal AuthUser authUser,
@@ -53,10 +62,13 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<OrderSummaryResponse>>> getOrders(
-            @AuthenticationPrincipal AuthUser authUser
+    public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PageableDefault(size = 10) Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(orderService.getOrders(authUser.getUserId())));
+        return ResponseEntity.ok(ApiResponse.ok(
+                PageResponse.from(orderFacade.getOrders(authUser.getUserId(), pageable))
+        ));
     }
 
     @GetMapping("/{orderId}")
@@ -68,11 +80,11 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/cancel")
-    public ResponseEntity<ApiResponse<Void>> cancelOrder(
-            @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable("orderId") Long orderId
+        public ResponseEntity<ApiResponse<Void>> cancelOrder(
+                @AuthenticationPrincipal AuthUser authUser,
+                @PathVariable("orderId") Long orderId
     ) {
-        orderFacade.cancelOrder(authUser.getUserId(), orderId);
-        return ResponseEntity.ok(ApiResponse.ok("주문이 취소되었습니다."));
+            orderFacade.cancelOrder(authUser.getUserId(), orderId, OrderCancelReason.USER_REQUEST);
+            return ResponseEntity.ok(ApiResponse.ok("주문이 취소되었습니다."));
     }
 }

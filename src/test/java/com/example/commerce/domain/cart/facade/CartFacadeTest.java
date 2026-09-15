@@ -8,7 +8,7 @@ import com.example.commerce.domain.cart.entity.Cart;
 import com.example.commerce.domain.cart.entity.CartItem;
 import com.example.commerce.domain.cart.service.CartService;
 import com.example.commerce.domain.product.entity.Product;
-import com.example.commerce.domain.product.repository.ProductRepository;
+import com.example.commerce.domain.product.service.ProductService;
 import com.example.commerce.domain.user.entity.User;
 import com.example.commerce.domain.user.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -28,7 +27,7 @@ import static org.mockito.Mockito.*;
 class CartFacadeTest {
 
     @Mock
-    private ProductRepository productRepository;
+    private ProductService productService;
 
     @Mock
     private UserService userService;
@@ -59,8 +58,7 @@ class CartFacadeTest {
         CartItem cartItem = mock(CartItem.class);
 
         when(userService.findUser(userId)).thenReturn(user);
-        when(productRepository.findById(productId))
-                .thenReturn(Optional.of(product));
+        when(productService.findProduct(productId)).thenReturn(product);
         when(cartService.addCartItem(user, product, quantity))
                 .thenReturn(cartItem);
 
@@ -84,7 +82,7 @@ class CartFacadeTest {
         );
 
         verify(userService).findUser(userId);
-        verify(productRepository).findById(productId);
+        verify(productService).findProduct(productId);
         verify(cartService).addCartItem(user, product, quantity);
     }
 
@@ -117,7 +115,7 @@ class CartFacadeTest {
                 exception.getErrorCode()
         );
 
-        verifyNoInteractions(productRepository, cartService);
+        verifyNoInteractions(productService, cartService);
     }
 
     @Test
@@ -130,8 +128,8 @@ class CartFacadeTest {
         User user = mock(User.class);
 
         when(userService.findUser(userId)).thenReturn(user);
-        when(productRepository.findById(productId))
-                .thenReturn(Optional.empty());
+        when(productService.findProduct(productId))
+                .thenThrow(new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
 
         // when
         BusinessException exception = assertThrows(
@@ -150,7 +148,7 @@ class CartFacadeTest {
         );
 
         verify(userService).findUser(userId);
-        verify(productRepository).findById(productId);
+        verify(productService).findProduct(productId);
         verifyNoInteractions(cartService);
     }
 }

@@ -2,6 +2,7 @@ package com.example.commerce.domain.refund.dto;
 
 import com.example.commerce.domain.refund.entity.Refund;
 import com.example.commerce.domain.refund.entity.RefundStatus;
+import com.example.commerce.domain.refund.entity.RefundType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.List;
 public record RefundResponse (
         Long id,
         Long paymentId,
+        RefundType refundType,
         String reason,
         RefundStatus status,
         Long totalRefundAmount,
@@ -24,6 +26,7 @@ public record RefundResponse (
         return new RefundResponse(
                 refund.getId(),
                 refund.getPayment().getId(),
+                refund.getRefundType(),
                 refund.getReason(),
                 refund.getStatus(),
                 refund.getTotalRefundAmount(),
