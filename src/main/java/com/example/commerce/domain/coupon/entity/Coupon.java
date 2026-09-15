@@ -1,6 +1,8 @@
 package com.example.commerce.domain.coupon.entity;
 
 import com.example.commerce.common.entity.BaseEntity;
+import com.example.commerce.common.exception.BusinessException;
+import com.example.commerce.common.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -63,20 +65,63 @@ public class Coupon extends BaseEntity {
         this.maximumDiscountAmount = maximumDiscountAmount;
         this.totalQuantity = totalQuantity;
         this.issuedQuantity = 0; // default:0 스키마 반영
-        this.status = CouponStatus.ACTIVE; // 쿠폰 발급 오픈
+        this.status = CouponStatus.ACTIVE; // 쿠폰 생성 시 활성화 상태로 초기화
         this.issueStartsAt = LocalDateTime.now();
         this.issueEndsAt = issueStartsAt.plusMonths(COUPON_ISSUE_PERIOD_MONTHS);
     }
 
-    public void expiredCoupon() {
-        this.status = CouponStatus.EXPIRED;
+    public void updateName(String newName) {
+        this.name = newName;
+    }
+
+    public void updateDiscountRate(Integer newDiscountRate) {
+        this.discountRate = newDiscountRate;
+    }
+
+    public void updateMinimumOrderAmount(Integer newMinimumOrderAmount) {
+        this.minimumOrderAmount = newMinimumOrderAmount;
+    }
+
+    public void updateMaximumDiscountAmount(Integer newMaximumDiscountAmount) {
+        this.maximumDiscountAmount = newMaximumDiscountAmount;
+    }
+
+    public void updateTotalQuantity(Integer newTotalQuantity) {
+
+        // 쿠폰 총 재고가 발급된 쿠폰 수 이상이어야함
+        if (newTotalQuantity < issuedQuantity)
+            throw new BusinessException(ErrorCode.INVALID_COUPON_QUANTITY);
+
+        this.totalQuantity = newTotalQuantity;
     }
 
     public void activeCoupon() {
-        this.status = CouponStatus.ACTIVE;
+
+        CouponStatus tempStatus = this.status; // updateStatus 순간 DB가 변경되므로 기존 상태 임시저장
+
+        updateStatus(CouponStatus.ACTIVE);
+
+        // 만료일 경우 재활성시 기한도 갱신
+        if (tempStatus == CouponStatus.EXPIRED) {
+            this.issueStartsAt = LocalDateTime.now();
+            this.issueEndsAt = issueStartsAt.plusMonths(COUPON_ISSUE_PERIOD_MONTHS);
+        }
     }
 
     public void inactiveCoupon() {
-        this.status = CouponStatus.INACTIVE;
+        updateStatus(CouponStatus.INACTIVE);
+    }
+
+    private void updateStatus(CouponStatus newStatus) {
+        if (newStatus == null)
+            throw new BusinessException(ErrorCode.INVALID_COUPON_STATUS);
+
+        if (status != newStatus && !status.canTransitTo(newStatus))
+            throw new BusinessException(
+                    ErrorCode.INVALID_COUPON_STATUS,
+                    "쿠폰 상태를 " + status + "에서 " + newStatus + "로 변경할 수 없습니다."
+            );
+
+        this.status = newStatus;
     }
 }
