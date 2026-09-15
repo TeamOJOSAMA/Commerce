@@ -12,15 +12,18 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-// 실제 스프링 컨텍스트 + Redis가 필요하다 (로컬 Redis, DB 실행 중이어야 함).
-// @Cacheable은 AOP 프록시로 동작하므로 Mockito 단위 테스트로는 캐싱 여부를 검증할 수 없다.
+// @Cacheable은 AOP 프록시로 동작하므로 Mockito 단위 테스트로는 캐싱 여부를 검증할 수 없어 스프링 컨텍스트를 띄운다.
+// test 프로파일은 H2 + 인메모리 캐시(spring.cache.type=simple)라 외부 MySQL·Redis 없이 돈다.
+// Redis 직렬화까지 확인하려면 로컬 Redis를 띄우고 프로파일 없이 실행한다.
 @SpringBootTest
+@ActiveProfiles("test")
 class ProductServiceCacheTest {
 
     private static final String CACHE_NAME = "popularProducts";
@@ -52,7 +55,7 @@ class ProductServiceCacheTest {
 
         assertThat(second.getContent()).isEqualTo(first.getContent());
         // 서비스는 두 번 호출했지만, 리포지토리 실제 조회는 한 번만 일어나야 한다 (=캐시 히트).
-        verify(productRepository, times(1)).findAllByOrderByViewCountDesc(pageable);
+        verify(productRepository, times(1)).findPopularProducts(pageable);
     }
 
     @Test
