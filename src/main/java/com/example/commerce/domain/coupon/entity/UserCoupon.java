@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_coupons")
+@Table(
+        name = "user_coupons",
+        uniqueConstraints = @UniqueConstraint(name = "uk_user_coupon", columnNames = {"user_id", "coupon_id"})
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserCoupon extends BaseEntity {
@@ -77,10 +81,6 @@ public class UserCoupon extends BaseEntity {
         }
         this.status = UserCouponStatus.USED;
         this.usedAt = LocalDateTime.now();
-    }
-
-    public void expiredUserCoupon() {
-        this.status = UserCouponStatus.EXPIRED;
     }
 
     // 대기 주문 취소에 사용하는 예약 해제이며, USED 쿠폰의 환불 복구와는 구분한다.
