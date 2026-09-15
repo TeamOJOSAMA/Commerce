@@ -1,6 +1,8 @@
 package com.example.commerce.domain.cart.repository;
 
+import com.example.commerce.domain.cart.entity.Cart;
 import com.example.commerce.domain.cart.entity.CartItem;
+import com.example.commerce.domain.product.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
+
+    // 같은 상품이 이미 담겨있는지 확인해 중복 행 대신 수량을 합치는 데 사용한다.
+    Optional<CartItem> findByCartAndProduct(Cart cart, Product product);
 
     // 주문 생성용 조회다. 연관 상품은 잠금 전에 로딩하지 않도록 fetch join하지 않는다.
     // 호출자는 프록시의 ID만 읽어 잠금 대상 상품 ID를 모은다.

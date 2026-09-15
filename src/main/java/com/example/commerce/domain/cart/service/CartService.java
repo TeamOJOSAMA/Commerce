@@ -6,7 +6,11 @@ import com.example.commerce.domain.cart.dto.GetCartResponse;
 import com.example.commerce.domain.cart.dto.UpdateQuantityRequest;
 import com.example.commerce.domain.cart.dto.UpdateQuantityResponse;
 import com.example.commerce.domain.cart.repository.CartItemRepository;
+import com.example.commerce.domain.event.entity.Event;
+import com.example.commerce.domain.event.entity.EventStatus;
+import com.example.commerce.domain.event.repository.EventRepository;
 import com.example.commerce.domain.product.entity.Product;
+import com.example.commerce.domain.product.entity.ProductStatus;
 import com.example.commerce.domain.cart.entity.Cart;
 import com.example.commerce.domain.cart.entity.CartItem;
 import com.example.commerce.domain.cart.repository.CartRepository;
@@ -15,6 +19,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @Transactional(readOnly = true) // 기본적으로 읽기 전용 트랜잭션으로 설정
 @RequiredArgsConstructor
@@ -22,6 +33,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final EventRepository eventRepository;
 
     /** (CartFacade에서 회원과 상품을 조회한 후 호출) */
     @Transactional
@@ -38,6 +50,24 @@ public class CartService {
         Cart cart = cartRepository.findCartByUser(user)
                 .orElseGet(() -> new Cart(user));
 
+        // 이미 담겨있는 상품이면 행을 새로 만들지 않고 수량만 합친다 (신규 장바구니는 항목이 있을 수 없으므로 조회를 건너뛴다)
+        Optional<CartItem> existingItem = cart.getId() == null
+                ? Optional.empty()
+                : cartItemRepository.findByCartAndProduct(cart, product);
+
+        if (existingItem.isPresent()) {
+            CartItem cartItem = existingItem.get();
+            int mergedQuantity = cartItem.getQuantity() + quantity;
+
+            // 합산 수량이 재고를 초과하지 않는가
+            if (mergedQuantity > product.getStock())
+                throw new BusinessException(ErrorCode.STOCK_AMOUNT_OVERFLOW); // 400
+
+            cartItem.updateQuantity(mergedQuantity);
+
+            return cartItem;
+        }
+
         // 장바구니 아이템 생성
         CartItem cartItem = new CartItem(cart, product, quantity);
 
@@ -52,9 +82,33 @@ public class CartService {
     public GetCartResponse getCart(Long userId) {
 
         // 로그인 회원 ID로 본인의 장바구니를 조회
-        return cartRepository.findByUserId(userId)
-                .map(GetCartResponse::from) // 장바구니가 있다면 (단, 장바구니 내의 내용물은 있든 없든 상관없음)
-                .orElseGet(GetCartResponse::empty); // 장바구니 자체가 없다면
+        Optional<Cart> cart = cartRepository.findByUserId(userId);
+        if (cart.isEmpty()) {
+            return GetCartResponse.empty(); // 장바구니 자체가 없다면
+        }
+
+        // 상품 상세/목록과 같은 할인가를 보여주기 위해 이벤트 상품만 일괄 조회한다.
+        Map<Long, Event> eventsByProductId = getApplicableEvents(cart.get().getCartItems().stream()
+                .map(CartItem::getProduct)
+                .toList());
+
+        return GetCartResponse.from(cart.get(), eventsByProductId);
+    }
+
+    private Map<Long, Event> getApplicableEvents(List<Product> products) {
+        List<Long> eventProductIds = products.stream()
+                .filter(product -> product.getStatus() == ProductStatus.ON_EVENT)
+                .map(Product::getId)
+                .distinct()
+                .toList();
+
+        if (eventProductIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return eventRepository.findApplicableEvents(eventProductIds, EventStatus.ACTIVE, LocalDateTime.now())
+                .stream()
+                .collect(Collectors.toMap(event -> event.getProduct().getId(), Function.identity()));
     }
 
     /** 요청한 회원 소유의 장바구니의 특정 상품 수량 변경 */

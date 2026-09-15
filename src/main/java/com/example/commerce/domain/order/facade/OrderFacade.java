@@ -228,9 +228,14 @@ public class OrderFacade {
                     couponEligibleAmount = Math.addExact(couponEligibleAmount, subTotal);
                 }
 
+                // 상세/장바구니와 같은 취소선 표시를 위해 이벤트 적용 항목만 원가·할인율을 함께 내려준다.
+                Long originalPrice = orderItem.hasAppliedEvent() ? product.getPrice() : null;
+                Integer discountRate = orderItem.hasAppliedEvent()
+                        ? events.get(product.getId()).getDiscountRate() : null;
+
                 items.add(OrderPreviewItemResponse.available(
                         cartItem.getId(), orderItem.getProductId(), orderItem.getEventId(),
-                        orderItem.getProductName(), orderItem.getUnitPrice(),
+                        orderItem.getProductName(), orderItem.getUnitPrice(), originalPrice, discountRate,
                         orderItem.getQuantity(), product.getStock()));
             }
         } catch (ArithmeticException e) {
@@ -283,7 +288,25 @@ public class OrderFacade {
         Refund refund = payment == null ? null
                 : refundService.findRefundByPaymentId(payment.getId()).orElse(null);
 
-        return OrderResponse.from(order, payment, refund);
+        // 이벤트 항목의 원가·할인율을 상품 상세/장바구니와 같은 방식으로 보여주기 위한 일괄 조회다.
+        List<Long> productIds = order.getOrderItems().stream()
+                .filter(OrderItem::hasAppliedEvent)
+                .map(OrderItem::getProductId)
+                .distinct()
+                .toList();
+        List<Long> eventIds = order.getOrderItems().stream()
+                .map(OrderItem::getEventId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, Product> productsById = productIds.isEmpty() ? Map.of()
+                : productRepository.findAllById(productIds).stream()
+                        .collect(Collectors.toMap(Product::getId, Function.identity()));
+        Map<Long, Event> eventsById = eventIds.isEmpty() ? Map.of()
+                : eventRepository.findAllById(eventIds).stream()
+                        .collect(Collectors.toMap(Event::getId, Function.identity()));
+
+        return OrderResponse.from(order, payment, refund, productsById, eventsById);
     }
 
     /** 미결제 주문의 재고 복구, 결제 실패 처리, 쿠폰 예약 해제를 함께 커밋한다. */

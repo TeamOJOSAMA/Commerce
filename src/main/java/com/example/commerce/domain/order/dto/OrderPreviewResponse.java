@@ -72,6 +72,9 @@ public record OrderPreviewResponse(
             Long eventId,
             String productName,
             long unitPrice,
+            // 이벤트 적용 전 상품 원가다. 상세/장바구니와 같은 취소선 표시를 위해 이벤트 상품일 때만 값이 있다.
+            Long originalPrice,
+            Integer discountRate,
             int quantity,
             // 단가 × 수량이다. 구매할 수 없는 항목도 화면 표시를 위해 계산하지만 합계에는 넣지 않는다.
             long subTotal,
@@ -86,10 +89,10 @@ public record OrderPreviewResponse(
     ) {
         public static OrderPreviewItemResponse available(
                 Long cartItemId, Long productId, Long eventId, String productName,
-                long unitPrice, int quantity, int availableStock
+                long unitPrice, Long originalPrice, Integer discountRate, int quantity, int availableStock
         ) {
             return new OrderPreviewItemResponse(
-                    cartItemId, productId, eventId, productName, unitPrice, quantity,
+                    cartItemId, productId, eventId, productName, unitPrice, originalPrice, discountRate, quantity,
                     Math.multiplyExact(unitPrice, quantity), true, null, null, availableStock);
         }
 
@@ -98,7 +101,7 @@ public record OrderPreviewResponse(
                 long unitPrice, int quantity, int availableStock, OrderItemUnavailableReason unavailableReason
         ) {
             return new OrderPreviewItemResponse(
-                    cartItemId, productId, null, productName, unitPrice, quantity,
+                    cartItemId, productId, null, productName, unitPrice, null, null, quantity,
                     Math.multiplyExact(unitPrice, quantity), false,
                     unavailableReason, unavailableReason.getMessage(), availableStock);
         }

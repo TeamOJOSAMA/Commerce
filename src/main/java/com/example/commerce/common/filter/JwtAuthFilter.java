@@ -32,6 +32,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     // 인증 없이 통과시킬 경로
     // WebSocket 핸드셰이크는 헤더에 토큰을 실을 수 없어 STOMP CONNECT 시점에 인증한다
+    // 상품/이벤트 조회는 비로그인 방문자도 둘러볼 수 있어야 한다 (SecurityConfig의 permitAll과 짝을 맞춤)
     private static final List<String> PERMITTED_PATH_PREFIXES = List.of(
             "/swagger-ui/",
             "/swagger-ui.html",
@@ -39,7 +40,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             "/api/auth",
             "/api/ws-stomp",
             "/api/ws-echo",
-            "/actuator/health"
+            "/actuator/health",
+            "/api/products",
+            "/api/events"
     );
 
     private static final String HTML_SUFFIX = ".html";

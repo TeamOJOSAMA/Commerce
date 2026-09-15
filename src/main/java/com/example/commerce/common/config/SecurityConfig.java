@@ -46,7 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/*.html").permitAll()
                         // WebSocket 핸드셰이크. 인증은 STOMP CONNECT 시점에 ChannelInterceptor 에서 처리
                         .requestMatchers("/api/ws-stomp/**", "/api/ws-echo/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        // 비로그인 방문자도 상품/이벤트 목록은 둘러볼 수 있어야 한다 (프론트 Home/ProductList가 비로그인 접근 허용)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/events/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
                         .anyRequest().authenticated())
