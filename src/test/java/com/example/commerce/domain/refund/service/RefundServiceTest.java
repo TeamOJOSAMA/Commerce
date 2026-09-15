@@ -56,10 +56,10 @@ class RefundServiceTest {
         lenient().when(order.getOrderItems()).thenReturn(List.of(orderItemA, orderItemB));
         lenient().when(orderItemA.getId()).thenReturn(ITEM_A_ID);
         lenient().when(orderItemA.getQuantity()).thenReturn(2);
-        lenient().when(orderItemA.getUnitPrice()).thenReturn(1_000L);
+        lenient().when(orderItemA.getPaidAmount()).thenReturn(1_800L);
         lenient().when(orderItemB.getId()).thenReturn(ITEM_B_ID);
         lenient().when(orderItemB.getQuantity()).thenReturn(1);
-        lenient().when(orderItemB.getUnitPrice()).thenReturn(3_000L);
+        lenient().when(orderItemB.getPaidAmount()).thenReturn(2_700L);
 
 lenient().when(paymentRepository.findByIdForUpdate(PAYMENT_ID)).thenReturn(Optional.of(payment));
 lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false);
@@ -68,7 +68,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
     }
 
     @Test
-    @DisplayName("전액 환불 - 주문 전체 항목을 전량 환불하고 총액은 주문 전액")
+    @DisplayName("전액 환불 - 주문 전체 항목을 전량 환불하고 총액은 항목 실결제액의 합")
     void createRefund_full() {
         var request = new RefundRequest(PAYMENT_ID, RefundType.FULL, "단순 변심", null);
 
@@ -76,7 +76,7 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
 
         assertThat(response.refundType()).isEqualTo(RefundType.FULL);
         assertThat(response.items()).hasSize(2);
-        assertThat(response.totalRefundAmount()).isEqualTo(2 * 1_000L + 1 * 3_000L);
+        assertThat(response.totalRefundAmount()).isEqualTo(1_800L + 2_700L);
     }
 
     @Test
@@ -104,7 +104,8 @@ lenient().when(refundRepository.existsByPaymentId(PAYMENT_ID)).thenReturn(false)
                     assertThat(i.orderItemId()).isEqualTo(ITEM_A_ID);
                     assertThat(i.quantity()).isEqualTo(1);
                 });
-        assertThat(response.totalRefundAmount()).isEqualTo(1_000L);
+        // 실결제액 1,800의 2개 중 1개 → 1,800 × 1 ÷ 2
+        assertThat(response.totalRefundAmount()).isEqualTo(900L);
     }
 
     @Test
