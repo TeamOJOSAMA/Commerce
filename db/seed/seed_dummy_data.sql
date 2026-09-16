@@ -22,22 +22,15 @@ INSERT INTO user_coupons (created_at, updated_at, user_id, coupon_id, status, is
 (NOW(), NOW(), (SELECT id FROM users WHERE email='lee@test.com'), (SELECT id FROM coupons WHERE name='여름 시즌 15% 쿠폰'), 'AVAILABLE', NOW(), DATE_ADD(NOW(), INTERVAL 14 DAY), NULL),
 (NOW(), NOW(), (SELECT id FROM users WHERE email='park@test.com'), (SELECT id FROM coupons WHERE name='VIP 20% 쿠폰'), 'USED', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_ADD(NOW(), INTERVAL 60 DAY), DATE_SUB(NOW(), INTERVAL 2 DAY));
 
--- ============ 4. 이벤트(할인) - 기존에 ON_EVENT로 시딩된 상품 3개에 실제 Event 행을 연결 ============
-INSERT INTO events (product_id, discount_rate, event_price, event_type, sold_quantity, total_quantity, start_at, end_at, status)
-VALUES ((SELECT id FROM products WHERE name='크루넥 니트' AND category='CLOTHING'), 20, 79000, 'FLASH_SALE', 5, 30, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 3 DAY), 'ACTIVE');
-UPDATE products SET current_event_id = LAST_INSERT_ID() WHERE name='크루넥 니트' AND category='CLOTHING';
-
-INSERT INTO events (product_id, discount_rate, event_price, event_type, sold_quantity, total_quantity, start_at, end_at, status)
-VALUES ((SELECT id FROM products WHERE name='반팔 티셔츠' AND category='CLOTHING'), 10, 42400, 'FLASH_SALE', 3, 40, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 3 DAY), 'ACTIVE');
-UPDATE products SET current_event_id = LAST_INSERT_ID() WHERE name='반팔 티셔츠' AND category='CLOTHING';
-
-INSERT INTO events (product_id, discount_rate, event_price, event_type, sold_quantity, total_quantity, start_at, end_at, status)
-VALUES ((SELECT id FROM products WHERE name='트렌치 코트' AND category='CLOTHING'), 30, 13200, 'FLASH_SALE', 8, 25, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 3 DAY), 'ACTIVE');
-UPDATE products SET current_event_id = LAST_INSERT_ID() WHERE name='트렌치 코트' AND category='CLOTHING';
-
--- 종료된 이벤트도 하나 (히스토리 확인용)
-INSERT INTO events (product_id, discount_rate, event_price, event_type, sold_quantity, total_quantity, start_at, end_at, status)
-VALUES ((SELECT id FROM products WHERE name='미니 스커트' AND category='CLOTHING'), 40, 30800, 'FLASH_SALE', 20, 20, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), 'ENDED');
+-- ============ 4. 이벤트(할인) ============
+-- ON_EVENT 상태로 시딩된 상품들의 실제 Event 행은 apply_event_discount.sql이 전부 만들어준다
+-- (이 스크립트 다음 순서로 실행). 여기서는 그걸로 만들 수 없는 "종료된 이벤트" 하나만
+-- 히스토리 확인용으로 남겨둔다. 미니 스커트는 seed_products.sql에서 ON_SALE로 시딩되어
+-- apply_event_discount.sql 대상이 아니다.
+-- event_type, products.current_event_id는 예전 스키마에서 쓰던 컬럼이라 지금 엔티티에는
+-- 없다 - 새로 만든 DB에는 그 컬럼 자체가 없으므로 여기서 참조하면 안 된다.
+INSERT INTO events (created_at, updated_at, product_id, discount_rate, event_price, sold_quantity, total_quantity, start_at, end_at, status)
+VALUES (NOW(), NOW(), (SELECT id FROM products WHERE name='미니 스커트' AND category='CLOTHING'), 40, 30800, 20, 20, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY), 'ENDED');
 
 -- ============ 5. 장바구니 ============
 INSERT INTO carts (created_at, updated_at, user_id) VALUES
