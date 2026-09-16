@@ -38,13 +38,13 @@ IntelliJ 실행 설정(Run Configuration)의 Environment Variables에 아래를 
 ```bash
 mysql -u <DB_USERNAME> -p commerce < db/seed/seed_products.sql
 mysql -u <DB_USERNAME> -p commerce < db/seed/seed_dummy_data.sql
-mysql -u <DB_USERNAME> -p commerce < db/seed/backfill_missing_events.sql
+mysql -u <DB_USERNAME> -p commerce < db/seed/apply_event_discount.sql
 mysql -u <DB_USERNAME> -p commerce < db/seed/seed_chat_bot.sql
 ```
 
 - `seed_products.sql` — 상품 220개
 - `seed_dummy_data.sql` — 테스트 회원 5명(비밀번호 전부 `test1234`), 쿠폰, 장바구니, 주문, 이벤트 4건
-- `backfill_missing_events.sql` — `seed_products.sql`이 "이벤트중" 상태로 만들어둔 상품 중, 실제 이벤트 데이터가 빠진 나머지 상품에 이벤트를 채워준다
+- `apply_event_discount.sql` — "할인상품" 화면에 뜨는 상품(`status='ON_EVENT'`) 전체에 이벤트가 없으면 만들고, 있으면 덮어써서 균일하게 5% 할인을 건다. 여러 번 실행해도 안전하다
 - `seed_chat_bot.sql` — 챗봇 전용 계정 생성. **마지막 줄 조회 결과(`bot_user_id`)를 `CHAT_BOT_USER_ID` 환경변수에 넣고 백엔드를 (재)시작해야 한다**
 
 테스트 계정: `kim@test.com` / `lee@test.com` / `park@test.com` / `choi@test.com` (일반 회원), `seller@test.com`(판매자) — 비밀번호 전부 `test1234`.
@@ -69,7 +69,7 @@ npm run dev
 `http://localhost:5173`. `/api`는 `localhost:8080`으로 프록시된다(별도 설정 불필요).
 
 ## 시연 시나리오 예시
-1. **상품 둘러보기** — 비로그인 상태로 홈/상품목록 진입. "타임세일" 탭에서 이벤트 할인 상품(취소선+할인율) 확인
+1. **상품 둘러보기** — 비로그인 상태로 홈/상품목록 진입. "할인상품" 탭에서 이벤트 할인 상품(취소선+할인율) 확인
 2. **회원가입 또는 테스트 계정 로그인** (`kim@test.com` / `test1234`)
 3. **장바구니** — 상품 담기, 같은 상품 두 번 담아서 중복 행 대신 수량이 합쳐지는 것 확인
 4. **주문서 작성 → 결제** — 결제 완료 후 주문 상세에서 이벤트 할인/쿠폰 할인 표시 확인
@@ -80,3 +80,4 @@ npm run dev
 - `/products/popular`(인기 상품)는 Redis에 5분 캐시된다 — 이벤트 데이터를 막 바꿨다면 반영까지 최대 5분 걸릴 수 있음
 - 데모 계정(로그인 화면의 "데모 계정으로 체험하기")은 백엔드 없이 프론트 목업만으로 화면을 둘러볼 수 있게 만든 것이라, 실제 결제·채팅은 동작하지 않는다(안내 문구가 뜬다). 실제 흐름을 보여주려면 반드시 위 테스트 계정으로 로그인할 것
 - 예전 코드로 이미 DB를 한 번 띄워봤다면 `refunds` 테이블에 `uk_refund_payment_id`(결제당 환불 1건 제약)가 남아있을 수 있다. `ddl-auto: update`는 기존 제약을 자동으로 지우지 않으므로, 부분환불을 여러 번 테스트하다 원인 불명의 오류가 나면 `ALTER TABLE refunds DROP INDEX uk_refund_payment_id;` 실행하거나 DB를 새로 만들 것
+- 같은 이유로 아주 오래전 DB라면 `events` 테이블에 지금 코드는 안 쓰는 `event_type` 컬럼이 남아있을 수 있다. MySQL이 ENUM 컬럼을 암묵적으로 채워주긴 하지만(첫 값으로), 신경 쓰이면 `ALTER TABLE events DROP COLUMN event_type;`로 지워도 된다
